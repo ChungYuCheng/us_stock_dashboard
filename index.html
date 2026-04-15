@@ -840,10 +840,20 @@ async function refresh() {
     });
 
     if (failedSymbols.length > 0) {
-      toast(`報價取得失敗：${failedSymbols.join(', ')}`, 'error');
+      toast(`報價取得失敗：${failedSymbols.join(', ')}（所有來源皆無回應）`, 'error');
     }
     if (zeroPriceSymbols.length > 0) {
-      toast(`無法取得即時價格：${zeroPriceSymbols.join(', ')}，可能為 Yahoo 限流`, 'warn', 5000);
+      toast(`無法取得即時價格：${zeroPriceSymbols.join(', ')}`, 'warn', 5000);
+    }
+
+    // Show data sources used
+    const sources = new Set();
+    symbols.forEach(sym => {
+      const q = quotesCache[sym];
+      if (q && q.source) sources.add(q.source);
+    });
+    if (sources.size > 0) {
+      toast(`報價來源：${[...sources].join(', ')}`, 'info', 3000);
     }
 
     symbols.forEach(sym => {
