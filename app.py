@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import base64
 import logging
 import threading
 
@@ -17,57 +18,130 @@ FINNHUB_KEY = os.environ.get("FINNHUB_API_KEY", "")
 TWELVE_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
 ALPHA_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
 
-# Cache: quotes refresh once per day, history every 6 hours
+# GitHub cache storage
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
+GITHUB_REPO = os.environ.get("GITHUB_REPO", "ChungYuCheng/us_stock_dashboard")
+GITHUB_CACHE_PATH = "cache_data.json"
+
+# Cache TTLs
 QUOTE_CACHE_TTL = int(os.environ.get("QUOTE_CACHE_TTL", "86400"))  # 24h
 HISTORY_CACHE_TTL = int(os.environ.get("HISTORY_CACHE_TTL", "21600"))  # 6h
 
-# Daily refresh hour in UTC (default 21:00 UTC = US market close 4PM ET + 1h buffer)
+# Daily refresh hour in UTC (default 21:00 UTC = US market close + 1h)
 REFRESH_HOUR_UTC = int(os.environ.get("REFRESH_HOUR_UTC", "21"))
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), "cache_data.json")
+
+# ── GitHub cache storage ─────────────────────────────────────
+
+def github_headers():
+    return {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+
+
+def load_cache_from_github():
+    """Pull cache_data.json from GitHub repo."""
+    if not GITHUB_TOKEN:
+        log.warning("No GITHUB_TOKEN, skipping GitHub cache load")
+        return None
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_CACHE_PATH}"
+        resp = http_requests.get(url, headers=github_headers(), timeout=10)
+        if resp.status_code == 200:
+            content = base64.b64decode(resp.json()["content"]).decode("utf-8")
+            data = json.loads(content)
+            log.info(f"Cache loaded from GitHub: {len(data.get('quotes', {}))} quotes, {len(data.get('symbols', []))} symbols")
+            return data
+        elif resp.status_code == 404:
+            log.info("No cache file on GitHub yet")
+        else:
+            log.warning(f"GitHub load failed: {resp.status_code} {resp.text[:200]}")
+    except Exception as e:
+        log.warning(f"GitHub cache load error: {e}")
+    return None
+
+
+def save_cache_to_github(data_dict):
+    """Push cache_data.json to GitHub repo."""
+    if not GITHUB_TOKEN:
+        log.warning("No GITHUB_TOKEN, skipping GitHub cache save")
+        return False
+    try:
+        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_CACHE_PATH}"
+        content = base64.b64encode(json.dumps(data_dict, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+
+        # Get existing file SHA (needed for update)
+        sha = None
+        resp = http_requests.get(url, headers=github_headers(), timeout=10)
+        if resp.status_code == 200:
+            sha = resp.json()["sha"]
+
+        payload = {
+            "message": f"Update cache: {len(data_dict.get('quotes', {}))} quotes",
+            "content": content,
+            "branch": "main",
+        }
+        if sha:
+            payload["sha"] = sha
+
+        resp = http_requests.put(url, headers=github_headers(), json=payload, timeout=15)
+        if resp.status_code in (200, 201):
+            log.info("Cache saved to GitHub successfully")
+            return True
+        else:
+            log.warning(f"GitHub save failed: {resp.status_code} {resp.text[:200]}")
+    except Exception as e:
+        log.warning(f"GitHub cache save error: {e}")
+    return False
 
 
 # ── Persistent cache ─────────────────────────────────────────
 
 class PersistentCache:
     def __init__(self):
-        self._quotes = {}       # {symbol: {data, ts}}
-        self._history = {}      # {"SYM:period": {data, ts}}
-        self._symbols = set()   # all symbols ever requested
+        self._quotes = {}
+        self._history = {}
+        self._symbols = set()
         self._lock = threading.Lock()
         self._last_refresh = 0
         self._load()
 
     def _load(self):
-        try:
-            with open(DATA_FILE, "r") as f:
-                saved = json.load(f)
+        # Try GitHub first, then local file
+        saved = load_cache_from_github()
+        if not saved:
+            try:
+                with open(os.path.join(os.path.dirname(__file__), "cache_data.json"), "r") as f:
+                    saved = json.load(f)
+                log.info("Cache loaded from local file")
+            except (FileNotFoundError, json.JSONDecodeError):
+                log.info("No cache found, starting fresh")
+                return
+
+        if saved:
             self._quotes = saved.get("quotes", {})
             self._history = saved.get("history", {})
             self._symbols = set(saved.get("symbols", []))
             self._last_refresh = saved.get("last_refresh", 0)
-            log.info(f"Cache loaded: {len(self._quotes)} quotes, {len(self._symbols)} symbols")
-        except (FileNotFoundError, json.JSONDecodeError):
-            log.info("No cache file found, starting fresh")
 
-    def _save(self):
-        try:
-            with open(DATA_FILE, "w") as f:
-                json.dump({
-                    "quotes": self._quotes,
-                    "history": self._history,
-                    "symbols": list(self._symbols),
-                    "last_refresh": self._last_refresh,
-                }, f)
-        except Exception as e:
-            log.warning(f"Cache save failed: {e}")
+    def _to_dict(self):
+        return {
+            "quotes": self._quotes,
+            "history": self._history,
+            "symbols": list(self._symbols),
+            "last_refresh": self._last_refresh,
+        }
+
+    def save_to_github(self):
+        with self._lock:
+            return save_cache_to_github(self._to_dict())
 
     def track_symbols(self, symbols):
         with self._lock:
             new = set(s.upper() for s in symbols) - self._symbols
             if new:
                 self._symbols.update(new)
-                self._save()
                 log.info(f"Tracking new symbols: {new}")
 
     def get_all_symbols(self):
@@ -101,15 +175,6 @@ class PersistentCache:
     def set_last_refresh(self):
         with self._lock:
             self._last_refresh = time.time()
-            self._save()
-
-    def get_last_refresh(self):
-        with self._lock:
-            return self._last_refresh
-
-    def save(self):
-        with self._lock:
-            self._save()
 
     def stats(self):
         with self._lock:
@@ -119,6 +184,7 @@ class PersistentCache:
                 "cached_history": len(self._history),
                 "last_refresh": self._last_refresh,
                 "last_refresh_ago": f"{int(time.time() - self._last_refresh)}s" if self._last_refresh else "never",
+                "github_enabled": bool(GITHUB_TOKEN),
             }
 
 
@@ -240,7 +306,6 @@ PROVIDERS = [
 
 
 def fetch_quote_fresh(symbol):
-    """Try each provider in order, return first success."""
     for name, fn in PROVIDERS:
         try:
             result = fn(symbol)
@@ -254,7 +319,6 @@ def fetch_quote_fresh(symbol):
 
 
 def get_quote(symbol):
-    """Return from cache if fresh, otherwise fetch."""
     cached = cache.get_quote(symbol)
     if cached:
         log.info(f"{symbol}: serving from cache")
@@ -265,15 +329,13 @@ def get_quote(symbol):
 # ── Daily batch refresh ──────────────────────────────────────
 
 def refresh_all_symbols():
-    """Refresh quotes for all tracked symbols."""
     symbols = cache.get_all_symbols()
     if not symbols:
         log.info("Daily refresh: no symbols to refresh")
-        return {"refreshed": 0, "symbols": []}
+        return {"refreshed": 0, "failed": [], "symbols": [], "github_saved": False}
 
     log.info(f"Daily refresh: updating {len(symbols)} symbols...")
-    success = []
-    failed = []
+    success, failed = [], []
 
     for sym in symbols:
         result = fetch_quote_fresh(sym)
@@ -281,15 +343,23 @@ def refresh_all_symbols():
             failed.append(sym)
         else:
             success.append(sym)
-        time.sleep(0.5)  # rate limit buffer between symbols
+        time.sleep(0.5)
 
     cache.set_last_refresh()
-    log.info(f"Daily refresh done: {len(success)} ok, {len(failed)} failed")
-    return {"refreshed": len(success), "failed": failed, "symbols": success}
+
+    # Save to GitHub after refresh
+    github_ok = cache.save_to_github()
+
+    log.info(f"Daily refresh done: {len(success)} ok, {len(failed)} failed, GitHub: {github_ok}")
+    return {
+        "refreshed": len(success),
+        "failed": failed,
+        "symbols": success,
+        "github_saved": github_ok,
+    }
 
 
 def _daily_scheduler():
-    """Background thread: check every 10 min if it's time for daily refresh."""
     import datetime
     last_date = None
 
@@ -306,10 +376,9 @@ def _daily_scheduler():
         except Exception as e:
             log.error(f"Scheduler error: {e}")
 
-        time.sleep(600)  # check every 10 minutes
+        time.sleep(600)
 
 
-# Start scheduler in background
 _scheduler_thread = threading.Thread(target=_daily_scheduler, daemon=True)
 _scheduler_thread.start()
 
@@ -384,7 +453,6 @@ def history():
 
 @app.route("/api/refresh", methods=["POST"])
 def manual_refresh():
-    """Manually trigger a refresh of all tracked symbols."""
     result = refresh_all_symbols()
     return jsonify(result)
 
