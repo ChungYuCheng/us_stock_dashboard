@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import logging
 import threading
@@ -11,50 +12,122 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("stock-api")
 
-# API keys from environment variables (set in Render dashboard)
+# API keys
 FINNHUB_KEY = os.environ.get("FINNHUB_API_KEY", "")
 TWELVE_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
 ALPHA_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
 
-# Cache TTL in seconds (default 2 minutes)
-QUOTE_CACHE_TTL = int(os.environ.get("QUOTE_CACHE_TTL", "120"))
-HISTORY_CACHE_TTL = int(os.environ.get("HISTORY_CACHE_TTL", "300"))
+# Cache: quotes refresh once per day, history every 6 hours
+QUOTE_CACHE_TTL = int(os.environ.get("QUOTE_CACHE_TTL", "86400"))  # 24h
+HISTORY_CACHE_TTL = int(os.environ.get("HISTORY_CACHE_TTL", "21600"))  # 6h
+
+# Daily refresh hour in UTC (default 21:00 UTC = US market close 4PM ET + 1h buffer)
+REFRESH_HOUR_UTC = int(os.environ.get("REFRESH_HOUR_UTC", "21"))
+
+DATA_FILE = os.path.join(os.path.dirname(__file__), "cache_data.json")
 
 
-# ── Server-side cache ────────────────────────────────────────
+# ── Persistent cache ─────────────────────────────────────────
 
-class Cache:
+class PersistentCache:
     def __init__(self):
-        self._store = {}
+        self._quotes = {}       # {symbol: {data, ts}}
+        self._history = {}      # {"SYM:period": {data, ts}}
+        self._symbols = set()   # all symbols ever requested
         self._lock = threading.Lock()
+        self._last_refresh = 0
+        self._load()
 
-    def get(self, key, ttl):
+    def _load(self):
+        try:
+            with open(DATA_FILE, "r") as f:
+                saved = json.load(f)
+            self._quotes = saved.get("quotes", {})
+            self._history = saved.get("history", {})
+            self._symbols = set(saved.get("symbols", []))
+            self._last_refresh = saved.get("last_refresh", 0)
+            log.info(f"Cache loaded: {len(self._quotes)} quotes, {len(self._symbols)} symbols")
+        except (FileNotFoundError, json.JSONDecodeError):
+            log.info("No cache file found, starting fresh")
+
+    def _save(self):
+        try:
+            with open(DATA_FILE, "w") as f:
+                json.dump({
+                    "quotes": self._quotes,
+                    "history": self._history,
+                    "symbols": list(self._symbols),
+                    "last_refresh": self._last_refresh,
+                }, f)
+        except Exception as e:
+            log.warning(f"Cache save failed: {e}")
+
+    def track_symbols(self, symbols):
         with self._lock:
-            entry = self._store.get(key)
-            if entry and (time.time() - entry["ts"]) < ttl:
+            new = set(s.upper() for s in symbols) - self._symbols
+            if new:
+                self._symbols.update(new)
+                self._save()
+                log.info(f"Tracking new symbols: {new}")
+
+    def get_all_symbols(self):
+        with self._lock:
+            return list(self._symbols)
+
+    def get_quote(self, symbol):
+        with self._lock:
+            entry = self._quotes.get(symbol)
+            if entry and (time.time() - entry["ts"]) < QUOTE_CACHE_TTL:
+                data = entry["data"].copy()
+                data["source"] = data.get("source", "?") + " (cached)"
+                return data
+        return None
+
+    def set_quote(self, symbol, data):
+        with self._lock:
+            self._quotes[symbol] = {"data": data, "ts": time.time()}
+
+    def get_history(self, key):
+        with self._lock:
+            entry = self._history.get(key)
+            if entry and (time.time() - entry["ts"]) < HISTORY_CACHE_TTL:
                 return entry["data"]
         return None
 
-    def set(self, key, data):
+    def set_history(self, key, data):
         with self._lock:
-            self._store[key] = {"data": data, "ts": time.time()}
+            self._history[key] = {"data": data, "ts": time.time()}
+
+    def set_last_refresh(self):
+        with self._lock:
+            self._last_refresh = time.time()
+            self._save()
+
+    def get_last_refresh(self):
+        with self._lock:
+            return self._last_refresh
+
+    def save(self):
+        with self._lock:
+            self._save()
 
     def stats(self):
         with self._lock:
-            now = time.time()
-            total = len(self._store)
-            fresh = sum(1 for e in self._store.values() if (now - e["ts"]) < QUOTE_CACHE_TTL)
-            return {"total_entries": total, "fresh_entries": fresh}
+            return {
+                "tracked_symbols": len(self._symbols),
+                "cached_quotes": len(self._quotes),
+                "cached_history": len(self._history),
+                "last_refresh": self._last_refresh,
+                "last_refresh_ago": f"{int(time.time() - self._last_refresh)}s" if self._last_refresh else "never",
+            }
 
 
-quote_cache = Cache()
-history_cache = Cache()
+cache = PersistentCache()
 
 
-# ── Quote providers (fallback chain) ──────────────────────────
+# ── Quote providers ───────────────────────────────────────────
 
 def quote_yfinance(symbol):
-    """Provider 1: yfinance (no API key needed)"""
     ticker = yf.Ticker(symbol)
     fi = ticker.fast_info
     price = fi.get("lastPrice", 0) or fi.get("last_price", 0)
@@ -83,7 +156,6 @@ def quote_yfinance(symbol):
 
 
 def quote_finnhub(symbol):
-    """Provider 2: Finnhub (60 req/min free)"""
     if not FINNHUB_KEY:
         return None
     resp = http_requests.get(
@@ -111,7 +183,6 @@ def quote_finnhub(symbol):
 
 
 def quote_twelvedata(symbol):
-    """Provider 3: Twelve Data (800 req/day free)"""
     if not TWELVE_KEY:
         return None
     resp = http_requests.get(
@@ -131,7 +202,6 @@ def quote_twelvedata(symbol):
 
 
 def quote_alphavantage(symbol):
-    """Provider 4: Alpha Vantage (25 req/day free)"""
     if not ALPHA_KEY:
         return None
     resp = http_requests.get(
@@ -169,25 +239,79 @@ PROVIDERS = [
 ]
 
 
-def get_quote(symbol):
-    """Try cache first, then each provider in order."""
-    cached = quote_cache.get(symbol, QUOTE_CACHE_TTL)
-    if cached:
-        cached["source"] = cached.get("source", "?") + " (cached)"
-        log.info(f"{symbol}: serving from cache")
-        return cached
-
+def fetch_quote_fresh(symbol):
+    """Try each provider in order, return first success."""
     for name, fn in PROVIDERS:
         try:
             result = fn(symbol)
             if result and result.get("price"):
                 log.info(f"{symbol}: got quote from {name}")
-                quote_cache.set(symbol, result)
+                cache.set_quote(symbol, result)
                 return result
         except Exception as e:
             log.warning(f"{symbol}: {name} failed — {e}")
-
     return {"error": f"所有報價來源皆失敗：{symbol}"}
+
+
+def get_quote(symbol):
+    """Return from cache if fresh, otherwise fetch."""
+    cached = cache.get_quote(symbol)
+    if cached:
+        log.info(f"{symbol}: serving from cache")
+        return cached
+    return fetch_quote_fresh(symbol)
+
+
+# ── Daily batch refresh ──────────────────────────────────────
+
+def refresh_all_symbols():
+    """Refresh quotes for all tracked symbols."""
+    symbols = cache.get_all_symbols()
+    if not symbols:
+        log.info("Daily refresh: no symbols to refresh")
+        return {"refreshed": 0, "symbols": []}
+
+    log.info(f"Daily refresh: updating {len(symbols)} symbols...")
+    success = []
+    failed = []
+
+    for sym in symbols:
+        result = fetch_quote_fresh(sym)
+        if result.get("error"):
+            failed.append(sym)
+        else:
+            success.append(sym)
+        time.sleep(0.5)  # rate limit buffer between symbols
+
+    cache.set_last_refresh()
+    log.info(f"Daily refresh done: {len(success)} ok, {len(failed)} failed")
+    return {"refreshed": len(success), "failed": failed, "symbols": success}
+
+
+def _daily_scheduler():
+    """Background thread: check every 10 min if it's time for daily refresh."""
+    import datetime
+    last_date = None
+
+    while True:
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc)
+            today = now.date()
+
+            if now.hour >= REFRESH_HOUR_UTC and last_date != today:
+                log.info("Triggering scheduled daily refresh")
+                refresh_all_symbols()
+                last_date = today
+
+        except Exception as e:
+            log.error(f"Scheduler error: {e}")
+
+        time.sleep(600)  # check every 10 minutes
+
+
+# Start scheduler in background
+_scheduler_thread = threading.Thread(target=_daily_scheduler, daemon=True)
+_scheduler_thread.start()
 
 
 # ── Routes ────────────────────────────────────────────────────
@@ -200,10 +324,12 @@ def index():
 @app.route("/api/quote", methods=["POST"])
 def quote():
     data = request.json
-    symbols = data.get("symbols", [])
+    symbols = [s.upper() for s in data.get("symbols", [])]
+    cache.track_symbols(symbols)
+
     results = {}
     for symbol in symbols:
-        results[symbol.upper()] = get_quote(symbol.upper())
+        results[symbol] = get_quote(symbol)
     return jsonify(results)
 
 
@@ -223,7 +349,7 @@ def history():
         sym = symbol.upper()
         cache_key = f"{sym}:{period}"
 
-        cached = history_cache.get(cache_key, HISTORY_CACHE_TTL)
+        cached = cache.get_history(cache_key)
         if cached:
             results[sym] = cached
             continue
@@ -248,7 +374,7 @@ def history():
                 "dates": dates,
                 "prices": [round(p, 2) for p in hist["Close"].tolist()],
             }
-            history_cache.set(cache_key, entry)
+            cache.set_history(cache_key, entry)
             results[sym] = entry
         except Exception as e:
             results[sym] = {"error": str(e)}
@@ -256,17 +382,28 @@ def history():
     return jsonify(results)
 
 
+@app.route("/api/refresh", methods=["POST"])
+def manual_refresh():
+    """Manually trigger a refresh of all tracked symbols."""
+    result = refresh_all_symbols()
+    return jsonify(result)
+
+
 @app.route("/api/sources")
 def sources():
-    """Check which providers are configured."""
     return jsonify({
-        "yfinance": True,
-        "finnhub": bool(FINNHUB_KEY),
-        "twelvedata": bool(TWELVE_KEY),
-        "alphavantage": bool(ALPHA_KEY),
-        "cache": quote_cache.stats(),
-        "quote_cache_ttl": QUOTE_CACHE_TTL,
-        "history_cache_ttl": HISTORY_CACHE_TTL,
+        "providers": {
+            "yfinance": True,
+            "finnhub": bool(FINNHUB_KEY),
+            "twelvedata": bool(TWELVE_KEY),
+            "alphavantage": bool(ALPHA_KEY),
+        },
+        "cache": cache.stats(),
+        "config": {
+            "quote_cache_ttl": QUOTE_CACHE_TTL,
+            "history_cache_ttl": HISTORY_CACHE_TTL,
+            "refresh_hour_utc": REFRESH_HOUR_UTC,
+        },
     })
 
 

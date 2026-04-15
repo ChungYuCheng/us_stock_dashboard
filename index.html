@@ -282,6 +282,12 @@
   @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
+  .last-update {
+    font-size: 11px;
+    color: rgba(255,255,255,.5);
+    margin-top: 4px;
+  }
+
   @media (max-width: 1100px) {
     .summary-strip { grid-template-columns: repeat(3, 1fr); }
     .pie-row { grid-template-columns: 1fr 1fr; }
@@ -299,7 +305,10 @@
 <body>
 
 <div class="header">
-  <h1>US Stock Dashboard</h1>
+  <div>
+    <h1>US Stock Dashboard</h1>
+    <div class="last-update" id="lastUpdate"></div>
+  </div>
   <div class="input-row">
     <input type="text" id="symbolInput" placeholder="代號 (AAPL)" />
     <input type="number" id="sharesInput" placeholder="持股數量" min="0" step="any" />
@@ -869,8 +878,14 @@ async function refresh() {
     await renderPortfolioChart();
 
     if (failedSymbols.length === 0 && zeroPriceSymbols.length === 0) {
-      toast('報價更新成功', 'success', 2000);
+      const isCached = [...sources].every(s => s.includes('cached'));
+      toast(isCached ? '讀取快取報價' : '報價更新成功', 'success', 2000);
     }
+
+    // Show last update time
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      `最後更新：${now.toLocaleDateString('zh-TW')} ${now.toLocaleTimeString('zh-TW')}`;
 
     ['summaryStrip','pieRow','chartRow','tablePanel','miniChartsPanel'].forEach(id => document.getElementById(id).style.display = '');
   } catch (e) {
