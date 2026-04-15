@@ -1,1 +1,148 @@
-{"quotes": {"NVDA": {"data": {"name": "NVIDIA Corporation", "price": 196.50999450683594, "previousClose": 196.19, "currency": "USD", "change": 0.16, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242490.973012}, "AAPL": {"data": {"name": "Apple Inc.", "price": 258.8299865722656, "previousClose": 258.6001, "currency": "USD", "change": 0.09, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242488.365782}, "TSLA": {"data": {"name": "Tesla, Inc.", "price": 364.20001220703125, "previousClose": 366.0, "currency": "USD", "change": -0.49, "sector": "Consumer Cyclical", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242485.764854}, "MSFT": {"data": {"name": "Microsoft Corporation", "price": 393.1099853515625, "previousClose": 394.3999, "currency": "USD", "change": -0.33, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242484.086407}, "GOOGL": {"data": {"name": "Alphabet Inc.", "price": 332.9100036621094, "previousClose": 333.29, "currency": "USD", "change": -0.11, "sector": "Communication Services", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242486.625406}, "AMZN": {"data": {"name": "Amazon.com, Inc.", "price": 249.02000427246094, "previousClose": 249.16, "currency": "USD", "change": -0.06, "sector": "Consumer Cyclical", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242484.921567}, "META": {"data": {"name": "Meta Platforms, Inc.", "price": 662.489990234375, "previousClose": 665.935, "currency": "USD", "change": -0.52, "sector": "Communication Services", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242489.1979258}, "TSM": {"data": {"name": "Taiwan Semiconductor Manufactur", "price": 379.8900146484375, "previousClose": 384.3, "currency": "USD", "change": -1.15, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242487.4831202}, "AMD": {"data": {"name": "Advanced Micro Devices, Inc.", "price": 255.07000732421875, "previousClose": 253.3, "currency": "USD", "change": 0.7, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242490.129646}, "AVGO": {"data": {"name": "Broadcom Inc.", "price": 380.7799987792969, "previousClose": 392.9998, "currency": "USD", "change": -3.11, "sector": "Technology", "quoteType": "EQUITY", "source": "yfinance"}, "ts": 1776242483.2515469}}, "history": {}, "symbols": ["AVGO", "MSFT", "AMZN", "TSLA", "GOOGL", "TSM", "AAPL", "META", "AMD", "NVDA"], "last_refresh": 1776242491.478084}
+{
+  "quotes": {
+    "NVDA": {
+      "data": {
+        "name": "NVIDIA Corporation",
+        "price": 196.50999450683594,
+        "previousClose": 196.19,
+        "currency": "USD",
+        "change": 0.16,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243535.107179
+    },
+    "AAPL": {
+      "data": {
+        "name": "Apple Inc.",
+        "price": 258.8299865722656,
+        "previousClose": 258.6001,
+        "currency": "USD",
+        "change": 0.09,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243530.4968007
+    },
+    "TSLA": {
+      "data": {
+        "name": "Tesla, Inc.",
+        "price": 364.20001220703125,
+        "previousClose": 366.0,
+        "currency": "USD",
+        "change": -0.49,
+        "sector": "Consumer Cyclical",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243525.4396014
+    },
+    "MSFT": {
+      "data": {
+        "name": "Microsoft Corporation",
+        "price": 393.1099853515625,
+        "previousClose": 394.3999,
+        "currency": "USD",
+        "change": -0.33,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243522.3062644
+    },
+    "GOOGL": {
+      "data": {
+        "name": "Alphabet Inc.",
+        "price": 332.9100036621094,
+        "previousClose": 333.29,
+        "currency": "USD",
+        "change": -0.11,
+        "sector": "Communication Services",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243527.1756082
+    },
+    "AMZN": {
+      "data": {
+        "name": "Amazon.com, Inc.",
+        "price": 249.02000427246094,
+        "previousClose": 249.16,
+        "currency": "USD",
+        "change": -0.06,
+        "sector": "Consumer Cyclical",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243523.8501503
+    },
+    "META": {
+      "data": {
+        "name": "Meta Platforms, Inc.",
+        "price": 662.489990234375,
+        "previousClose": 665.935,
+        "currency": "USD",
+        "change": -0.52,
+        "sector": "Communication Services",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243531.944731
+    },
+    "TSM": {
+      "data": {
+        "name": "Taiwan Semiconductor Manufactur",
+        "price": 379.8900146484375,
+        "previousClose": 384.3,
+        "currency": "USD",
+        "change": -1.15,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243528.8010952
+    },
+    "AMD": {
+      "data": {
+        "name": "Advanced Micro Devices, Inc.",
+        "price": 255.07000732421875,
+        "previousClose": 253.3,
+        "currency": "USD",
+        "change": 0.7,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243533.575916
+    },
+    "AVGO": {
+      "data": {
+        "name": "Broadcom Inc.",
+        "price": 380.7799987792969,
+        "previousClose": 392.9998,
+        "currency": "USD",
+        "change": -3.11,
+        "sector": "Technology",
+        "quoteType": "EQUITY",
+        "source": "yfinance"
+      },
+      "ts": 1776243520.54672
+    }
+  },
+  "history": {},
+  "symbols": [
+    "AVGO",
+    "MSFT",
+    "AMZN",
+    "TSLA",
+    "GOOGL",
+    "TSM",
+    "AAPL",
+    "META",
+    "AMD",
+    "NVDA"
+  ],
+  "last_refresh": 1776243536.1073134
+}
