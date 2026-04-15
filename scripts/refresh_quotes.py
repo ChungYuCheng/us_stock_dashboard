@@ -18,6 +18,11 @@ ALPHA_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
 CACHE_PATH = "cache_data.json"
 
 
+def is_tw_stock(symbol):
+    s = symbol.upper()
+    return s.endswith(".TW") or s.endswith(".TWO")
+
+
 def github_headers():
     return {
         "Authorization": f"Bearer {GITHUB_TOKEN}",
@@ -115,11 +120,12 @@ def fetch_alphavantage(symbol):
 
 def build_quote(symbol, price, prev_close, name, sector, quote_type, source):
     change_pct = ((price - prev_close) / prev_close * 100) if prev_close else 0
+    currency = "TWD" if is_tw_stock(symbol) else "USD"
     return {
         "name": name,
         "price": price,
         "previousClose": prev_close,
-        "currency": "USD",
+        "currency": currency,
         "change": round(change_pct, 2),
         "sector": sector,
         "quoteType": quote_type,
@@ -147,13 +153,17 @@ def main():
         # Try yfinance first
         result = fetch_yfinance(sym)
         if result:
-            print(f"  OK via yfinance: ${result['price']:.2f}")
+            prefix = "NT$" if is_tw_stock(sym) else "$"
+            print(f"  OK via yfinance: {prefix}{result['price']:.2f}")
         else:
-            # Fallback to Alpha Vantage
-            print(f"  yfinance failed, trying Alpha Vantage...")
-            result = fetch_alphavantage(sym)
-            if result:
-                print(f"  OK via alphavantage: ${result['price']:.2f}")
+            # Fallback to Alpha Vantage (US stocks only)
+            if not is_tw_stock(sym):
+                print(f"  yfinance failed, trying Alpha Vantage...")
+                result = fetch_alphavantage(sym)
+                if result:
+                    print(f"  OK via alphavantage: ${result['price']:.2f}")
+            else:
+                print(f"  yfinance failed (no fallback for TW stocks)")
 
         if result:
             quotes[sym] = {"data": result, "ts": time.time()}

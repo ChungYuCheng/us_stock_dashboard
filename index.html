@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股持倉儀表板</title>
+<title>美股台股儀表板</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
   :root {
@@ -14,9 +14,7 @@
     --text-dim: #6b7280;
     --accent: #2563eb;
     --green: #16a34a;
-    --green-bg: #dcfce7;
     --red: #dc2626;
-    --red-bg: #fee2e2;
     --header-bg: #1e293b;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -27,8 +25,6 @@
     min-height: 100vh;
     font-size: 14px;
   }
-
-  /* Header */
   .header {
     background: var(--header-bg);
     color: #fff;
@@ -40,12 +36,7 @@
     gap: 12px;
   }
   .header h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
-  .input-row {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
+  .input-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .input-row input {
     background: rgba(255,255,255,.1);
     border: 1px solid rgba(255,255,255,.2);
@@ -58,222 +49,75 @@
   }
   .input-row input::placeholder { color: rgba(255,255,255,.5); }
   .input-row input:focus { border-color: var(--accent); background: rgba(255,255,255,.15); }
-  .btn {
-    padding: 7px 16px;
-    border-radius: 6px;
-    border: none;
-    font-size: 13px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all .15s;
-  }
+  .btn { padding: 7px 16px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; font-weight: 600; transition: all .15s; }
   .btn:hover { opacity: .9; }
   .btn-add { background: #3b82f6; color: #fff; }
   .btn-refresh { background: #10b981; color: #fff; }
-
   .container { padding: 16px 24px; max-width: 1600px; margin: 0 auto; }
 
-  /* Summary strip */
-  .summary-strip {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    margin-bottom: 16px;
+  .market-section-title {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
   }
-  .summary-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    text-align: center;
+  .market-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-weight: 700; color: #fff;
   }
-  .summary-card .label {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-    margin-bottom: 6px;
-  }
-  .summary-card .value {
-    font-size: 20px;
-    font-weight: 700;
-  }
-  .summary-card .sub {
-    font-size: 12px;
-    margin-top: 3px;
-    font-weight: 600;
-  }
+  .badge-us { background: #3b82f6; }
+  .badge-tw { background: #e11d48; }
 
-  /* Section panels */
-  .panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  .panel-title {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--accent);
-    display: inline-block;
-  }
+  .summary-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 16px; }
+  .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .summary-card .label { font-size: 11px; color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .summary-card .value { font-size: 20px; font-weight: 700; }
+  .summary-card .sub { font-size: 12px; margin-top: 3px; font-weight: 600; }
 
-  /* Row layouts */
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  .panel-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+
   .row { display: flex; gap: 16px; margin-bottom: 16px; }
   .row > * { flex: 1; min-width: 0; }
 
-  /* Pie charts row */
-  .pie-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
+  .pie-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
   .pie-panel { text-align: center; }
   .pie-panel canvas { max-height: 220px; }
 
-  /* Bar chart */
   .bar-panel canvas { max-height: 260px; }
 
-  /* Portfolio chart with zoom */
-  .zoom-bar {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
-  }
+  .zoom-bar { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
   .zoom-bar span { font-size: 12px; color: var(--text-dim); margin-right: 4px; font-weight: 500; }
-  .zoom-btn {
-    padding: 3px 10px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    color: var(--text-dim);
-    font-size: 11px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all .12s;
-  }
+  .zoom-btn { padding: 3px 10px; border: 1px solid var(--border); background: var(--card); color: var(--text-dim); font-size: 11px; border-radius: 4px; cursor: pointer; font-weight: 500; transition: all .12s; }
   .zoom-btn:hover { border-color: var(--accent); color: var(--accent); }
   .zoom-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  /* Holdings table */
   .table-wrap { overflow-x: auto; }
-  .htable {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .htable th {
-    text-align: left;
-    padding: 8px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    color: #fff;
-    background: #475569;
-    white-space: nowrap;
-  }
+  .htable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .htable th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 600; color: #fff; background: #475569; white-space: nowrap; }
   .htable th:first-child { border-radius: 6px 0 0 0; }
   .htable th:last-child { border-radius: 0 6px 0 0; }
-  .htable td {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
+  .htable td { padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .htable tr:hover td { background: #f8fafc; }
   .htable tr:last-child td { border-bottom: none; }
   .up { color: var(--green); font-weight: 600; }
   .down { color: var(--red); font-weight: 600; }
-  .remove-btn {
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    cursor: pointer;
-    font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 4px;
-  }
+  .remove-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
   .remove-btn:hover { color: var(--red); border-color: var(--red); }
 
-  /* Stock mini charts */
-  .mini-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-  }
-  .mini-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-  }
-  .mini-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
+  .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .mini-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .mini-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
   .mini-header h4 { font-size: 13px; font-weight: 700; }
   .mini-tabs { display: flex; gap: 2px; }
-  .mini-tab {
-    padding: 2px 7px;
-    border: 1px solid var(--border);
-    background: none;
-    color: var(--text-dim);
-    font-size: 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-weight: 500;
-  }
+  .mini-tab { padding: 2px 7px; border: 1px solid var(--border); background: none; color: var(--text-dim); font-size: 10px; border-radius: 3px; cursor: pointer; font-weight: 500; }
   .mini-tab:hover { border-color: var(--accent); color: var(--accent); }
   .mini-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
-  .empty-state {
-    text-align: center;
-    padding: 50px 20px;
-    color: var(--text-dim);
-    font-size: 15px;
-  }
-  .loading {
-    display: none;
-    text-align: center;
-    padding: 16px;
-    color: var(--accent);
-    font-weight: 500;
-  }
+  .empty-state { text-align: center; padding: 50px 20px; color: var(--text-dim); font-size: 15px; }
+  .loading { display: none; text-align: center; padding: 16px; color: var(--accent); font-weight: 500; }
   .loading.active { display: block; }
 
-  /* Toast */
-  .toast-container {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    pointer-events: none;
-  }
-  .toast {
-    pointer-events: auto;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    max-width: 400px;
-    animation: toastIn .3s ease, toastOut .3s ease 3.7s forwards;
-  }
+  .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { pointer-events: auto; padding: 12px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); display: flex; align-items: center; gap: 8px; max-width: 400px; animation: toastIn .3s ease, toastOut .3s ease 3.7s forwards; }
   .toast-error { background: #dc2626; }
   .toast-warn { background: #f59e0b; color: #000; }
   .toast-success { background: #16a34a; }
@@ -282,11 +126,7 @@
   @keyframes toastIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes toastOut { from { opacity: 1; } to { opacity: 0; transform: translateY(-10px); } }
 
-  .last-update {
-    font-size: 11px;
-    color: rgba(255,255,255,.5);
-    margin-top: 4px;
-  }
+  .last-update { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 4px; }
 
   @media (max-width: 1100px) {
     .summary-strip { grid-template-columns: repeat(3, 1fr); }
@@ -306,13 +146,13 @@
 
 <div class="header">
   <div>
-    <h1>US Stock Dashboard</h1>
+    <h1>美股台股儀表板</h1>
     <div class="last-update" id="lastUpdate"></div>
   </div>
   <div class="input-row">
-    <input type="text" id="symbolInput" placeholder="代號 (AAPL)" />
+    <input type="text" id="symbolInput" placeholder="代號 (AAPL / 2330)" />
     <input type="number" id="sharesInput" placeholder="持股數量" min="0" step="any" />
-    <input type="number" id="costInput" placeholder="成本價 USD" min="0" step="any" />
+    <input type="number" id="costInput" placeholder="成本價" min="0" step="any" />
     <button class="btn btn-add" onclick="addHolding()">新增持股</button>
     <button class="btn btn-refresh" onclick="refresh()">更新報價</button>
   </div>
@@ -322,69 +162,47 @@
 <div class="container">
   <div class="loading" id="loading">載入即時報價中...</div>
 
-  <!-- Summary Strip -->
-  <div class="summary-strip" id="summaryStrip" style="display:none">
-    <div class="summary-card">
-      <div class="label">未實現損益</div>
-      <div class="value" id="sumUnrealizedPnl">-</div>
-      <div class="sub" id="sumUnrealizedPct">-</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">損益 %</div>
-      <div class="value" id="sumPnlPct">-</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">市值</div>
-      <div class="value" id="sumMarketValue">-</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">投入成本</div>
-      <div class="value" id="sumCost">-</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">今日漲跌</div>
-      <div class="value" id="sumDayChange">-</div>
-    </div>
-    <div class="summary-card">
-      <div class="label">持股數</div>
-      <div class="value" id="sumCount">-</div>
-    </div>
+  <!-- US Summary -->
+  <div id="usSummarySection" style="display:none">
+    <div class="market-section-title"><span class="market-badge badge-us">US</span> 美股 (USD)</div>
+    <div class="summary-strip" id="summaryStripUS"></div>
   </div>
 
-  <!-- Pie charts row -->
-  <div class="pie-row" id="pieRow" style="display:none">
-    <div class="panel pie-panel">
-      <div class="panel-title">持股配置</div>
-      <canvas id="pieAllocation"></canvas>
-    </div>
-    <div class="panel pie-panel">
-      <div class="panel-title">產業分布</div>
-      <canvas id="pieSector"></canvas>
-    </div>
-    <div class="panel pie-panel">
-      <div class="panel-title">損益分布</div>
-      <canvas id="piePnl"></canvas>
-    </div>
+  <!-- TW Summary -->
+  <div id="twSummarySection" style="display:none">
+    <div class="market-section-title"><span class="market-badge badge-tw">TW</span> 台股 (TWD)</div>
+    <div class="summary-strip" id="summaryStripTW"></div>
   </div>
 
-  <!-- Portfolio chart + PnL bar chart -->
-  <div class="row" id="chartRow" style="display:none">
-    <div class="panel" style="flex:1.5">
-      <div class="panel-title">投資組合走勢</div>
-      <div class="zoom-bar">
-        <span>Zoom:</span>
-        <button class="zoom-btn" data-p="5d" onclick="setPortfolioPeriod('5d',this)">5D</button>
-        <button class="zoom-btn active" data-p="1mo" onclick="setPortfolioPeriod('1mo',this)">1M</button>
-        <button class="zoom-btn" data-p="3mo" onclick="setPortfolioPeriod('3mo',this)">3M</button>
-        <button class="zoom-btn" data-p="6mo" onclick="setPortfolioPeriod('6mo',this)">6M</button>
-        <button class="zoom-btn" data-p="1y" onclick="setPortfolioPeriod('1y',this)">1Y</button>
-        <button class="zoom-btn" data-p="max" onclick="setPortfolioPeriod('max',this)">MAX</button>
+  <!-- Pie charts -->
+  <div id="pieRow" style="display:none">
+    <div class="pie-row" id="pieRowUS"></div>
+    <div class="pie-row" id="pieRowTW"></div>
+  </div>
+
+  <!-- Portfolio charts + PnL bar -->
+  <div id="chartRow" style="display:none">
+    <div class="row" id="chartRowUS" style="display:none">
+      <div class="panel" style="flex:1.5">
+        <div class="panel-title">美股組合走勢 (USD)</div>
+        <div class="zoom-bar" id="zoomBarUS"></div>
+        <canvas id="portfolioChartUS"></canvas>
       </div>
-      <canvas id="portfolioChart"></canvas>
+      <div class="panel bar-panel">
+        <div class="panel-title">美股未實現損益</div>
+        <canvas id="pnlBarUS"></canvas>
+      </div>
     </div>
-    <div class="panel bar-panel">
-      <div class="panel-title">各股未實現損益</div>
-      <canvas id="pnlBarChart"></canvas>
+    <div class="row" id="chartRowTW" style="display:none">
+      <div class="panel" style="flex:1.5">
+        <div class="panel-title">台股組合走勢 (TWD)</div>
+        <div class="zoom-bar" id="zoomBarTW"></div>
+        <canvas id="portfolioChartTW"></canvas>
+      </div>
+      <div class="panel bar-panel">
+        <div class="panel-title">台股未實現損益</div>
+        <canvas id="pnlBarTW"></canvas>
+      </div>
     </div>
   </div>
 
@@ -403,7 +221,7 @@
   </div>
 
   <div id="emptyState" class="empty-state">
-    尚未新增任何持股。請在上方輸入股票代號、數量與成本價開始追蹤。
+    尚未新增任何持股。輸入美股代號 (如 AAPL) 或台股代號 (如 2330) 開始追蹤。
   </div>
 </div>
 
@@ -422,12 +240,25 @@ const SECTOR_COLORS = {
 };
 
 let holdings = JSON.parse(localStorage.getItem('holdings') || '[]');
+// Migration: add market field to legacy holdings
+holdings.forEach(h => { if (!h.market) h.market = 'US'; });
+
 let quotesCache = {};
 let chartInstances = {};
 let histCache = {};
 let miniActiveTab = {};
+let portfolioPeriod = { US: '1mo', TW: '1mo' };
 
 function saveHoldings() { localStorage.setItem('holdings', JSON.stringify(holdings)); }
+function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtInt(n) { return n.toLocaleString('en-US', {maximumFractionDigits:0}); }
+function destroyChart(key) { if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; } }
+function displaySym(symbol) { return symbol.replace(/\.(TW|TWO)$/i, ''); }
+function isTW(h) { return h.market === 'TW'; }
+function currencyPrefix(h) { return isTW(h) ? 'NT$' : '$'; }
+function fmtPrice(value, holding) { return currencyPrefix(holding) + fmt(value); }
+function fmtValue(value, holding) { return currencyPrefix(holding) + fmtInt(value); }
+function holdingsByMarket(market) { return holdings.filter(h => h.market === market); }
 
 // --- Toast ---
 function toast(message, type = 'error', duration = 4000) {
@@ -440,22 +271,24 @@ function toast(message, type = 'error', duration = 4000) {
   container.appendChild(el);
   setTimeout(() => el.remove(), duration);
 }
-function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
-function fmtInt(n) { return n.toLocaleString('en-US', {maximumFractionDigits:0}); }
-function destroyChart(key) { if (chartInstances[key]) { chartInstances[key].destroy(); delete chartInstances[key]; } }
 
 // --- Add / Remove ---
 function addHolding() {
-  const sym = document.getElementById('symbolInput').value.trim().toUpperCase();
+  const raw = document.getElementById('symbolInput').value.trim().toUpperCase();
   const shares = parseFloat(document.getElementById('sharesInput').value);
   const cost = parseFloat(document.getElementById('costInput').value);
-  if (!sym) return toast('請輸入股票代號', 'warn');
+  if (!raw) return toast('請輸入股票代號', 'warn');
   if (!shares || shares <= 0) return toast('請輸入有效的持股數量', 'warn');
   if (!cost || cost <= 0) return toast('請輸入有效的成本價', 'warn');
 
+  // Auto-detect market: pure digits → TW stock
+  const isTWStock = /^\d{4,6}$/.test(raw);
+  const sym = isTWStock ? raw + '.TW' : raw;
+  const market = isTWStock ? 'TW' : 'US';
+
   const existing = holdings.find(h => h.symbol === sym);
-  if (existing) { existing.shares = shares; existing.cost = cost; }
-  else holdings.push({ symbol: sym, shares, cost });
+  if (existing) { existing.shares = shares; existing.cost = cost; existing.market = market; }
+  else holdings.push({ symbol: sym, shares, cost, market });
 
   document.getElementById('symbolInput').value = '';
   document.getElementById('sharesInput').value = '';
@@ -473,10 +306,18 @@ function removeHolding(symbol) {
 
 // --- Summary ---
 function renderSummary() {
-  if (holdings.length === 0) return;
-  let totalValue = 0, totalCost = 0, totalDayChange = 0;
+  renderMarketSummary('US', '$', 'summaryStripUS', 'usSummarySection');
+  renderMarketSummary('TW', 'NT$', 'summaryStripTW', 'twSummarySection');
+}
 
-  holdings.forEach(h => {
+function renderMarketSummary(market, prefix, stripId, sectionId) {
+  const mh = holdingsByMarket(market);
+  const section = document.getElementById(sectionId);
+  if (mh.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  let totalValue = 0, totalCost = 0, totalDayChange = 0;
+  mh.forEach(h => {
     const q = quotesCache[h.symbol] || {};
     const price = q.price || 0;
     const prevClose = q.previousClose || price;
@@ -490,38 +331,61 @@ function renderSummary() {
   const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
   const dayColor = totalDayChange >= 0 ? 'var(--green)' : 'var(--red)';
 
-  document.getElementById('sumUnrealizedPnl').innerHTML = `<span style="color:${pnlColor}">${pnl>=0?'+':''}$${fmt(pnl)}</span>`;
-  document.getElementById('sumUnrealizedPct').innerHTML = `<span style="color:${pnlColor}">${pnl>=0?'+':''}${fmt(pnlPct)}%</span>`;
-  document.getElementById('sumPnlPct').innerHTML = `<span style="color:${pnlColor};font-size:28px">${pnl>=0?'+':''}${fmt(pnlPct)}%</span>`;
-  document.getElementById('sumMarketValue').textContent = `$${fmtInt(totalValue)}`;
-  document.getElementById('sumCost').textContent = `$${fmtInt(totalCost)}`;
-  document.getElementById('sumDayChange').innerHTML = `<span style="color:${dayColor}">${totalDayChange>=0?'+':''}$${fmt(totalDayChange)}</span>`;
-  document.getElementById('sumCount').textContent = holdings.length;
+  document.getElementById(stripId).innerHTML = `
+    <div class="summary-card"><div class="label">未實現損益</div><div class="value"><span style="color:${pnlColor}">${pnl>=0?'+':''}${prefix}${fmt(Math.abs(pnl))}</span></div><div class="sub"><span style="color:${pnlColor}">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
+    <div class="summary-card"><div class="label">損益 %</div><div class="value"><span style="color:${pnlColor};font-size:28px">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
+    <div class="summary-card"><div class="label">市值</div><div class="value">${prefix}${fmtInt(totalValue)}</div></div>
+    <div class="summary-card"><div class="label">投入成本</div><div class="value">${prefix}${fmtInt(totalCost)}</div></div>
+    <div class="summary-card"><div class="label">今日漲跌</div><div class="value"><span style="color:${dayColor}">${totalDayChange>=0?'+':''}${prefix}${fmt(Math.abs(totalDayChange))}</span></div></div>
+    <div class="summary-card"><div class="label">持股數</div><div class="value">${mh.length}</div></div>
+  `;
 }
 
 // --- Pie Charts ---
 function renderPieCharts() {
-  // 1. Allocation pie
-  destroyChart('pieAlloc');
-  const allocData = holdings.map(h => {
+  renderMarketPies('US', '$', 'pieRowUS', '美股');
+  renderMarketPies('TW', 'NT$', 'pieRowTW', '台股');
+}
+
+function renderMarketPies(market, prefix, rowId, label) {
+  const row = document.getElementById(rowId);
+  const mh = holdingsByMarket(market);
+  if (mh.length === 0) { row.innerHTML = ''; row.style.display = 'none'; return; }
+  row.style.display = '';
+
+  // Generate unique canvas IDs
+  const allocId = `pieAlloc_${market}`;
+  const secId = `pieSec_${market}`;
+  const pnlId = `piePnl_${market}`;
+
+  row.innerHTML = `
+    <div class="panel pie-panel"><div class="panel-title">${label}配置</div><canvas id="${allocId}"></canvas></div>
+    <div class="panel pie-panel"><div class="panel-title">產業分布</div><canvas id="${secId}"></canvas></div>
+    <div class="panel pie-panel"><div class="panel-title">${label}損益</div><canvas id="${pnlId}"></canvas></div>
+  `;
+
+  // Allocation
+  destroyChart(allocId);
+  const allocData = mh.map(h => {
     const price = (quotesCache[h.symbol]||{}).price || 0;
-    return { symbol: h.symbol, value: price * h.shares };
+    return { symbol: displaySym(h.symbol), value: price * h.shares };
   }).filter(d => d.value > 0);
   const allocTotal = allocData.reduce((s,d) => s+d.value, 0);
+  if (allocTotal > 0) {
+    chartInstances[allocId] = new Chart(document.getElementById(allocId), {
+      type: 'doughnut',
+      data: {
+        labels: allocData.map(d => `${d.symbol} ${(d.value/allocTotal*100).toFixed(1)}%`),
+        datasets: [{ data: allocData.map(d=>d.value), backgroundColor: COLORS.slice(0,allocData.length), borderWidth: 1, borderColor: '#fff' }]
+      },
+      options: pieOpts(prefix)
+    });
+  }
 
-  chartInstances.pieAlloc = new Chart(document.getElementById('pieAllocation'), {
-    type: 'doughnut',
-    data: {
-      labels: allocData.map(d => `${d.symbol} ${(d.value/allocTotal*100).toFixed(1)}%`),
-      datasets: [{ data: allocData.map(d=>d.value), backgroundColor: COLORS.slice(0,allocData.length), borderWidth: 1, borderColor: '#fff' }]
-    },
-    options: pieOpts()
-  });
-
-  // 2. Sector pie
-  destroyChart('pieSec');
+  // Sector
+  destroyChart(secId);
   const sectorMap = {};
-  holdings.forEach(h => {
+  mh.forEach(h => {
     const q = quotesCache[h.symbol] || {};
     const price = q.price || 0;
     let sector = q.sector || '';
@@ -531,55 +395,62 @@ function renderPieCharts() {
   });
   const sectors = Object.entries(sectorMap).sort((a,b)=>b[1]-a[1]);
   const secTotal = sectors.reduce((s,e)=>s+e[1],0);
+  if (secTotal > 0) {
+    chartInstances[secId] = new Chart(document.getElementById(secId), {
+      type: 'doughnut',
+      data: {
+        labels: sectors.map(([s,v]) => `${s} ${(v/secTotal*100).toFixed(1)}%`),
+        datasets: [{ data: sectors.map(e=>e[1]), backgroundColor: sectors.map(e=>SECTOR_COLORS[e[0]]||'#94a3b8'), borderWidth: 1, borderColor: '#fff' }]
+      },
+      options: pieOpts(prefix)
+    });
+  }
 
-  chartInstances.pieSec = new Chart(document.getElementById('pieSector'), {
-    type: 'doughnut',
-    data: {
-      labels: sectors.map(([s,v]) => `${s} ${(v/secTotal*100).toFixed(1)}%`),
-      datasets: [{ data: sectors.map(e=>e[1]), backgroundColor: sectors.map(e=>SECTOR_COLORS[e[0]]||'#94a3b8'), borderWidth: 1, borderColor: '#fff' }]
-    },
-    options: pieOpts()
-  });
-
-  // 3. PnL distribution pie (gainers vs losers)
-  destroyChart('piePnl');
+  // PnL
+  destroyChart(pnlId);
   let totalGain = 0, totalLoss = 0;
-  holdings.forEach(h => {
+  mh.forEach(h => {
     const price = (quotesCache[h.symbol]||{}).price || 0;
     const pnl = (price - h.cost) * h.shares;
     if (pnl >= 0) totalGain += pnl; else totalLoss += Math.abs(pnl);
   });
-
-  chartInstances.piePnl = new Chart(document.getElementById('piePnl'), {
+  chartInstances[pnlId] = new Chart(document.getElementById(pnlId), {
     type: 'doughnut',
     data: {
-      labels: [`獲利 $${fmtInt(totalGain)}`, `虧損 $${fmtInt(totalLoss)}`],
+      labels: [`獲利 ${prefix}${fmtInt(totalGain)}`, `虧損 ${prefix}${fmtInt(totalLoss)}`],
       datasets: [{ data: [totalGain, totalLoss], backgroundColor: ['#16a34a','#dc2626'], borderWidth: 1, borderColor: '#fff' }]
     },
-    options: pieOpts()
+    options: pieOpts(prefix)
   });
 }
 
-function pieOpts() {
+function pieOpts(prefix) {
   return {
-    responsive: true,
-    maintainAspectRatio: true,
+    responsive: true, maintainAspectRatio: true,
     plugins: {
       legend: { position: 'bottom', labels: { color: '#6b7280', padding: 8, font: { size: 11 }, boxWidth: 12 } },
-      tooltip: { callbacks: { label: ctx => `$${fmt(ctx.parsed)}` } }
+      tooltip: { callbacks: { label: ctx => `${prefix}${fmt(ctx.parsed)}` } }
     }
   };
 }
 
 // --- PnL Bar Chart ---
 function renderPnlBar() {
-  destroyChart('pnlBar');
-  const items = holdings.map(h => {
+  renderMarketPnlBar('US', '$', 'pnlBarUS');
+  renderMarketPnlBar('TW', 'NT$', 'pnlBarTW');
+}
+
+function renderMarketPnlBar(market, prefix, canvasId) {
+  destroyChart(canvasId);
+  const mh = holdingsByMarket(market);
+  if (mh.length === 0) return;
+
+  const items = mh.map(h => {
     const price = (quotesCache[h.symbol]||{}).price || 0;
-    return { symbol: h.symbol, pnl: (price - h.cost) * h.shares };
+    return { symbol: displaySym(h.symbol), pnl: (price - h.cost) * h.shares };
   });
 
-  chartInstances.pnlBar = new Chart(document.getElementById('pnlBarChart'), {
+  chartInstances[canvasId] = new Chart(document.getElementById(canvasId), {
     type: 'bar',
     data: {
       labels: items.map(i=>i.symbol),
@@ -587,100 +458,100 @@ function renderPnlBar() {
         label: '未實現損益',
         data: items.map(i=>i.pnl),
         backgroundColor: items.map(i => i.pnl >= 0 ? '#16a34a' : '#dc2626'),
-        borderRadius: 4,
-        barPercentage: 0.7,
+        borderRadius: 4, barPercentage: 0.7,
       }]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: ctx => `$${fmt(ctx.parsed.y)}` } }
-      },
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${prefix}${fmt(ctx.parsed.y)}` } } },
       scales: {
         x: { ticks: { color: '#6b7280', font: { size: 11, weight: '600' } }, grid: { display: false } },
-        y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => '$'+fmtInt(v) }, grid: { color: '#e0e3e844' } }
+        y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => prefix+fmtInt(v) }, grid: { color: '#e0e3e844' } }
       }
     }
   });
 }
 
 // --- Portfolio Chart ---
-let portfolioPeriod = '1mo';
+function buildZoomBar(market) {
+  const containerId = `zoomBar${market}`;
+  const periods = ['5d','1mo','3mo','6mo','1y','max'];
+  const labels = ['5D','1M','3M','6M','1Y','MAX'];
+  document.getElementById(containerId).innerHTML = '<span>Zoom:</span>' +
+    periods.map((p,i) => `<button class="zoom-btn ${p===portfolioPeriod[market]?'active':''}" onclick="setPortfolioPeriod('${market}','${p}',this)">${labels[i]}</button>`).join('');
+}
 
-async function setPortfolioPeriod(period, btn) {
-  portfolioPeriod = period;
-  document.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
+async function setPortfolioPeriod(market, period, btn) {
+  portfolioPeriod[market] = period;
+  const bar = document.getElementById(`zoomBar${market}`);
+  bar.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  await renderPortfolioChart();
+  await renderPortfolioChartForMarket(market);
 }
 
 async function renderPortfolioChart() {
-  const symbols = holdings.map(h => h.symbol);
-  if (symbols.length === 0) return;
+  for (const market of ['US', 'TW']) {
+    const mh = holdingsByMarket(market);
+    const rowEl = document.getElementById(`chartRow${market}`);
+    if (mh.length === 0) { rowEl.style.display = 'none'; continue; }
+    rowEl.style.display = '';
+    buildZoomBar(market);
+    await renderPortfolioChartForMarket(market);
+  }
+}
+
+async function renderPortfolioChartForMarket(market) {
+  const mh = holdingsByMarket(market);
+  if (mh.length === 0) return;
+  const prefix = market === 'TW' ? 'NT$' : '$';
+  const symbols = mh.map(h => h.symbol);
+  const period = portfolioPeriod[market];
+  const chartKey = `portfolio_${market}`;
+  const canvasId = `portfolioChart${market}`;
 
   try {
     const res = await fetch('/api/history', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ symbols, period: portfolioPeriod })
+      body: JSON.stringify({ symbols, period })
     });
     const data = await res.json();
-
-    // Build portfolio value series using first symbol's dates as reference
     const refSym = symbols.find(s => data[s] && !data[s].error);
     if (!refSym) return;
 
     const dates = data[refSym].dates;
-    const portfolioValues = dates.map((_, idx) => {
+    const values = dates.map((_, idx) => {
       let total = 0;
-      holdings.forEach(h => {
+      mh.forEach(h => {
         const d = data[h.symbol];
-        if (d && !d.error && d.prices[idx] !== undefined) {
-          total += d.prices[idx] * h.shares;
-        }
+        if (d && !d.error && d.prices[idx] !== undefined) total += d.prices[idx] * h.shares;
       });
       return Math.round(total);
     });
+    const costLine = mh.reduce((s,h) => s + h.cost * h.shares, 0);
 
-    const costLine = holdings.reduce((s,h) => s + h.cost * h.shares, 0);
-
-    destroyChart('portfolio');
-    chartInstances.portfolio = new Chart(document.getElementById('portfolioChart'), {
+    destroyChart(chartKey);
+    chartInstances[chartKey] = new Chart(document.getElementById(canvasId), {
       type: 'line',
       data: {
         labels: dates,
         datasets: [
-          {
-            label: '市值',
-            data: portfolioValues,
-            borderColor: '#3b82f6',
-            backgroundColor: '#3b82f622',
-            fill: true, tension: 0.3, pointRadius: 1.5, borderWidth: 2,
-          },
-          {
-            label: '投入成本',
-            data: dates.map(() => costLine),
-            borderColor: '#ef4444',
-            borderDash: [6,4],
-            borderWidth: 1.5, pointRadius: 0, fill: false,
-          }
+          { label: '市值', data: values, borderColor: '#3b82f6', backgroundColor: '#3b82f622', fill: true, tension: 0.3, pointRadius: 1.5, borderWidth: 2 },
+          { label: '投入成本', data: dates.map(() => costLine), borderColor: '#ef4444', borderDash: [6,4], borderWidth: 1.5, pointRadius: 0, fill: false }
         ]
       },
       options: {
-        responsive: true,
-        interaction: { intersect: false, mode: 'index' },
+        responsive: true, interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { labels: { color: '#6b7280', font: { size: 11 }, boxWidth: 14 } },
-          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: $${fmtInt(ctx.parsed.y)}` } }
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${prefix}${fmtInt(ctx.parsed.y)}` } }
         },
         scales: {
           x: { ticks: { color: '#6b7280', maxTicksLimit: 10, font: { size: 11 } }, grid: { color: '#e0e3e844' } },
-          y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => '$'+fmtInt(v) }, grid: { color: '#e0e3e844' } }
+          y: { ticks: { color: '#6b7280', font: { size: 11 }, callback: v => prefix+fmtInt(v) }, grid: { color: '#e0e3e844' } }
         }
       }
     });
-  } catch (e) { console.error('Portfolio chart error:', e); }
+  } catch (e) { console.error(`Portfolio chart (${market}) error:`, e); }
 }
 
 // --- Holdings Table ---
@@ -688,12 +559,18 @@ function renderTable() {
   const table = document.getElementById('holdingsTable');
   if (holdings.length === 0) { table.innerHTML = ''; return; }
 
+  // Sort: US first, then TW
+  const sorted = [...holdings].sort((a,b) => {
+    if (a.market === b.market) return 0;
+    return a.market === 'US' ? -1 : 1;
+  });
+
   let html = `<thead><tr>
-    <th>代號</th><th>名稱</th><th>產業</th><th>現價</th><th>持股</th>
+    <th>市場</th><th>代號</th><th>名稱</th><th>產業</th><th>現價</th><th>持股</th>
     <th>成本價</th><th>市值</th><th>未實現損益</th><th>損益%</th><th>今日漲跌</th><th></th>
   </tr></thead><tbody>`;
 
-  holdings.forEach(h => {
+  sorted.forEach(h => {
     const q = quotesCache[h.symbol] || {};
     const price = q.price || 0;
     const value = price * h.shares;
@@ -702,18 +579,22 @@ function renderTable() {
     const change = q.change || 0;
     const cls = v => v >= 0 ? 'up' : 'down';
     const arrow = v => v >= 0 ? '▲' : '▼';
+    const p = currencyPrefix(h);
     let sector = q.sector || '';
     if (q.quoteType === 'ETF') sector = 'ETF';
+    const badgeClass = isTW(h) ? 'badge-tw' : 'badge-us';
+    const badgeLabel = isTW(h) ? 'TW' : 'US';
 
     html += `<tr>
-      <td><strong>${h.symbol}</strong></td>
-      <td>${q.name || h.symbol}</td>
+      <td><span class="market-badge ${badgeClass}">${badgeLabel}</span></td>
+      <td><strong>${displaySym(h.symbol)}</strong></td>
+      <td>${q.name || displaySym(h.symbol)}</td>
       <td style="font-size:12px;color:var(--text-dim)">${sector}</td>
-      <td>$${fmt(price)}</td>
+      <td>${p}${fmt(price)}</td>
       <td>${h.shares}</td>
-      <td>$${fmt(h.cost)}</td>
-      <td><strong>$${fmt(value)}</strong></td>
-      <td class="${cls(pnl)}">${arrow(pnl)} $${fmt(Math.abs(pnl))}</td>
+      <td>${p}${fmt(h.cost)}</td>
+      <td><strong>${p}${fmt(value)}</strong></td>
+      <td class="${cls(pnl)}">${arrow(pnl)} ${p}${fmt(Math.abs(pnl))}</td>
       <td class="${cls(pnlPct)}">${pnlPct>=0?'+':''}${fmt(pnlPct)}%</td>
       <td class="${cls(change)}">${change>=0?'+':''}${fmt(change)}%</td>
       <td><button class="remove-btn" onclick="removeHolding('${h.symbol}')">移除</button></td>
@@ -728,15 +609,13 @@ function renderTable() {
 function renderMiniCharts() {
   const grid = document.getElementById('miniGrid');
   grid.innerHTML = '';
-
-  Object.keys(chartInstances).forEach(k => {
-    if (k.startsWith('mini_')) destroyChart(k);
-  });
+  Object.keys(chartInstances).forEach(k => { if (k.startsWith('mini_')) destroyChart(k); });
 
   holdings.forEach((h, i) => {
     const sym = h.symbol;
     if (!miniActiveTab[sym]) miniActiveTab[sym] = '5d';
     const color = COLORS[i % COLORS.length];
+    const prefix = currencyPrefix(h);
 
     const card = document.createElement('div');
     card.className = 'mini-card';
@@ -748,21 +627,19 @@ function renderMiniCharts() {
 
     card.innerHTML = `
       <div class="mini-header">
-        <h4>${sym}</h4>
+        <h4>${displaySym(sym)} <span class="market-badge ${isTW(h)?'badge-tw':'badge-us'}" style="font-size:9px;padding:1px 5px">${h.market}</span></h4>
         <div class="mini-tabs">${tabsHtml}</div>
       </div>
       <canvas id="mc_${sym}"></canvas>
     `;
     grid.appendChild(card);
-
-    drawMini(sym, miniActiveTab[sym], color);
+    drawMini(sym, miniActiveTab[sym], color, prefix);
   });
 }
 
-function drawMini(symbol, period, color) {
+function drawMini(symbol, period, color, prefix) {
   const key = `mini_${symbol}`;
   destroyChart(key);
-
   const canvas = document.getElementById(`mc_${symbol}`);
   if (!canvas) return;
   const data = (histCache[symbol]||{})[period];
@@ -772,20 +649,15 @@ function drawMini(symbol, period, color) {
     type: 'line',
     data: {
       labels: data.dates,
-      datasets: [{
-        data: data.prices,
-        borderColor: color,
-        backgroundColor: color + '18',
-        fill: true, tension: 0.35, pointRadius: 0, borderWidth: 1.5,
-      }]
+      datasets: [{ data: data.prices, borderColor: color, backgroundColor: color + '18', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 1.5 }]
     },
     options: {
       responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
       interaction: { intersect: false, mode: 'index' },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '$'+fmt(c.parsed.y) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => prefix+fmt(c.parsed.y) } } },
       scales: {
         x: { ticks: { color: '#9ca3af', maxTicksLimit: 5, font: { size: 9 } }, grid: { display: false } },
-        y: { ticks: { color: '#9ca3af', font: { size: 9 }, callback: v=>'$'+v, maxTicksLimit: 4 }, grid: { color: '#e5e7eb44' } }
+        y: { ticks: { color: '#9ca3af', font: { size: 9 }, callback: v=>prefix+v, maxTicksLimit: 4 }, grid: { color: '#e5e7eb44' } }
       }
     }
   });
@@ -793,8 +665,10 @@ function drawMini(symbol, period, color) {
 
 async function switchMini(symbol, period) {
   miniActiveTab[symbol] = period;
-  const idx = holdings.findIndex(h => h.symbol === symbol);
+  const h = holdings.find(x => x.symbol === symbol);
+  const idx = holdings.indexOf(h);
   const color = COLORS[idx % COLORS.length];
+  const prefix = h ? currencyPrefix(h) : '$';
 
   const card = document.getElementById(`mini_${symbol}`);
   if (card) card.querySelectorAll('.mini-tab').forEach(b => b.classList.toggle('active', b.textContent === {
@@ -812,14 +686,13 @@ async function switchMini(symbol, period) {
       histCache[symbol][period] = json[symbol];
     } catch(e) { return; }
   }
-
-  drawMini(symbol, period, color);
+  drawMini(symbol, period, color, prefix);
 }
 
 // --- Main Refresh ---
 async function refresh() {
   if (holdings.length === 0) {
-    ['summaryStrip','pieRow','chartRow','tablePanel','miniChartsPanel'].forEach(id => document.getElementById(id).style.display = 'none');
+    ['usSummarySection','twSummarySection','pieRow','chartRow','tablePanel','miniChartsPanel'].forEach(id => document.getElementById(id).style.display = 'none');
     document.getElementById('emptyState').style.display = 'block';
     return;
   }
@@ -839,31 +712,20 @@ async function refresh() {
     quotesCache = await quoteRes.json();
     const hist5d = await hist5dRes.json();
 
-    // Check for failed quotes
     const failedSymbols = [];
     const zeroPriceSymbols = [];
     symbols.forEach(sym => {
       const q = quotesCache[sym];
-      if (!q || q.error) failedSymbols.push(sym);
-      else if (!q.price || q.price === 0) zeroPriceSymbols.push(sym);
+      if (!q || q.error) failedSymbols.push(displaySym(sym));
+      else if (!q.price || q.price === 0) zeroPriceSymbols.push(displaySym(sym));
     });
 
-    if (failedSymbols.length > 0) {
-      toast(`報價取得失敗：${failedSymbols.join(', ')}（所有來源皆無回應）`, 'error');
-    }
-    if (zeroPriceSymbols.length > 0) {
-      toast(`無法取得即時價格：${zeroPriceSymbols.join(', ')}`, 'warn', 5000);
-    }
+    if (failedSymbols.length > 0) toast(`報價取得失敗：${failedSymbols.join(', ')}`, 'error');
+    if (zeroPriceSymbols.length > 0) toast(`無法取得即時價格：${zeroPriceSymbols.join(', ')}`, 'warn', 5000);
 
-    // Show data sources used
     const sources = new Set();
-    symbols.forEach(sym => {
-      const q = quotesCache[sym];
-      if (q && q.source) sources.add(q.source);
-    });
-    if (sources.size > 0) {
-      toast(`報價來源：${[...sources].join(', ')}`, 'info', 3000);
-    }
+    symbols.forEach(sym => { const q = quotesCache[sym]; if (q && q.source) sources.add(q.source); });
+    if (sources.size > 0) toast(`報價來源：${[...sources].join(', ')}`, 'info', 3000);
 
     symbols.forEach(sym => {
       if (!histCache[sym]) histCache[sym] = {};
@@ -882,12 +744,11 @@ async function refresh() {
       toast(isCached ? '讀取快取報價' : '報價更新成功', 'success', 2000);
     }
 
-    // Show last update time
     const now = new Date();
     document.getElementById('lastUpdate').textContent =
       `最後更新：${now.toLocaleDateString('zh-TW')} ${now.toLocaleTimeString('zh-TW')}`;
 
-    ['summaryStrip','pieRow','chartRow','tablePanel','miniChartsPanel'].forEach(id => document.getElementById(id).style.display = '');
+    ['pieRow','chartRow','tablePanel','miniChartsPanel'].forEach(id => document.getElementById(id).style.display = '');
   } catch (e) {
     console.error(e);
     toast('資料載入失敗，請確認伺服器是否運行中', 'error', 5000);
@@ -897,7 +758,6 @@ async function refresh() {
 }
 
 document.getElementById('costInput').addEventListener('keydown', e => { if (e.key === 'Enter') addHolding(); });
-
 refresh();
 </script>
 </body>

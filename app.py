@@ -31,6 +31,12 @@ HISTORY_CACHE_TTL = int(os.environ.get("HISTORY_CACHE_TTL", "21600"))  # 6h
 REFRESH_HOUR_UTC = int(os.environ.get("REFRESH_HOUR_UTC", "21"))
 
 
+def is_tw_stock(symbol):
+    """Check if symbol is a Taiwan stock (.TW or .TWO suffix)."""
+    s = symbol.upper()
+    return s.endswith(".TW") or s.endswith(".TWO")
+
+
 # ── GitHub cache storage ─────────────────────────────────────
 
 def github_headers():
@@ -234,7 +240,7 @@ def quote_yfinance(symbol):
 
 
 def quote_finnhub(symbol):
-    if not FINNHUB_KEY:
+    if not FINNHUB_KEY or is_tw_stock(symbol):
         return None
     resp = http_requests.get(
         f"https://finnhub.io/api/v1/quote?symbol={symbol}&token={FINNHUB_KEY}",
@@ -261,7 +267,7 @@ def quote_finnhub(symbol):
 
 
 def quote_twelvedata(symbol):
-    if not TWELVE_KEY:
+    if not TWELVE_KEY or is_tw_stock(symbol):
         return None
     resp = http_requests.get(
         f"https://api.twelvedata.com/quote?symbol={symbol}&apikey={TWELVE_KEY}",
@@ -280,7 +286,7 @@ def quote_twelvedata(symbol):
 
 
 def quote_alphavantage(symbol):
-    if not ALPHA_KEY:
+    if not ALPHA_KEY or is_tw_stock(symbol):
         return None
     resp = http_requests.get(
         f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={ALPHA_KEY}",
@@ -297,11 +303,12 @@ def quote_alphavantage(symbol):
 
 def _build_quote(symbol, price, prev_close, name, sector, quote_type, source):
     change_pct = ((price - prev_close) / prev_close * 100) if prev_close else 0
+    currency = "TWD" if is_tw_stock(symbol) else "USD"
     return {
         "name": name,
         "price": price,
         "previousClose": prev_close,
-        "currency": "USD",
+        "currency": currency,
         "change": round(change_pct, 2),
         "sector": sector,
         "quoteType": quote_type,

@@ -2,9 +2,8 @@ name: Daily Stock Refresh
 
 on:
   schedule:
-    # UTC 21:00 = US market close (4PM ET) + 1 hour buffer
-    # = Taiwan time 05:00 AM next day
-    - cron: '0 21 * * 1-5'  # Mon-Fri only
+    - cron: '0 6 * * 1-5'   # UTC 06:00 = TW market close (13:30 TST) + buffer
+    - cron: '0 21 * * 1-5'  # UTC 21:00 = US market close (16:00 ET) + buffer
   workflow_dispatch:  # Allow manual trigger from GitHub Actions tab
 
 jobs:
