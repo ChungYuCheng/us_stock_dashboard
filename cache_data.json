@@ -3,135 +3,326 @@
     "NVDA": {
       "data": {
         "name": "NVIDIA Corporation",
-        "price": 196.50999450683594,
+        "price": 198.8699951171875,
         "previousClose": 196.19,
         "currency": "USD",
-        "change": 0.16,
+        "change": 1.37,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245038.139202
+      "ts": 1776289877.1570952
     },
     "AAPL": {
       "data": {
         "name": "Apple Inc.",
-        "price": 258.8299865722656,
+        "price": 266.42999267578125,
         "previousClose": 258.6001,
         "currency": "USD",
-        "change": 0.09,
+        "change": 3.03,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245034.3858037
+      "ts": 1776289871.7755954
     },
     "TSLA": {
       "data": {
         "name": "Tesla, Inc.",
-        "price": 364.20001220703125,
+        "price": 391.95001220703125,
         "previousClose": 366.0,
         "currency": "USD",
-        "change": -0.49,
+        "change": 7.09,
         "sector": "Consumer Cyclical",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245030.547039
+      "ts": 1776289866.2872381
     },
     "MSFT": {
       "data": {
         "name": "Microsoft Corporation",
-        "price": 393.1099853515625,
+        "price": 411.2200012207031,
         "previousClose": 394.3999,
         "currency": "USD",
-        "change": -0.33,
+        "change": 4.26,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245027.8444955
+      "ts": 1776289862.8856025
     },
     "GOOGL": {
       "data": {
         "name": "Alphabet Inc.",
-        "price": 332.9100036621094,
+        "price": 337.1199951171875,
         "previousClose": 333.29,
         "currency": "USD",
-        "change": -0.11,
+        "change": 1.15,
         "sector": "Communication Services",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245031.788858
+      "ts": 1776289868.0863006
     },
     "AMZN": {
       "data": {
         "name": "Amazon.com, Inc.",
-        "price": 249.02000427246094,
+        "price": 248.5,
         "previousClose": 249.16,
         "currency": "USD",
-        "change": -0.06,
+        "change": -0.26,
         "sector": "Consumer Cyclical",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245029.0675106
+      "ts": 1776289864.5936034
     },
     "META": {
       "data": {
         "name": "Meta Platforms, Inc.",
-        "price": 662.489990234375,
+        "price": 671.5800170898438,
         "previousClose": 665.935,
         "currency": "USD",
-        "change": -0.52,
+        "change": 0.85,
         "sector": "Communication Services",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245035.6513112
+      "ts": 1776289873.5671391
     },
     "TSM": {
       "data": {
         "name": "Taiwan Semiconductor Manufactur",
-        "price": 379.8900146484375,
+        "price": 375.1000061035156,
         "previousClose": 384.3,
         "currency": "USD",
-        "change": -1.15,
+        "change": -2.39,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245033.0574038
+      "ts": 1776289869.9729383
     },
     "AMD": {
       "data": {
         "name": "Advanced Micro Devices, Inc.",
-        "price": 255.07000732421875,
+        "price": 258.1199951171875,
         "previousClose": 253.3,
         "currency": "USD",
-        "change": 0.7,
+        "change": 1.9,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245036.876661
+      "ts": 1776289875.414927
     },
     "AVGO": {
       "data": {
         "name": "Broadcom Inc.",
-        "price": 380.7799987792969,
+        "price": 396.7200012207031,
         "previousClose": 392.9998,
         "currency": "USD",
-        "change": -3.11,
+        "change": 0.95,
         "sector": "Technology",
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776245026.4656265
+      "ts": 1776289861.1893167
     }
   },
-  "history": {},
+  "history": {
+    "AVGO:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          354.91,
+          371.55,
+          379.75,
+          380.78,
+          396.72
+        ]
+      },
+      "ts": 1776289878.3227513
+    },
+    "MSFT:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          373.07,
+          370.87,
+          384.37,
+          393.11,
+          411.22
+        ]
+      },
+      "ts": 1776289878.9945488
+    },
+    "AMZN:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          233.65,
+          238.38,
+          239.89,
+          249.02,
+          248.5
+        ]
+      },
+      "ts": 1776289879.607599
+    },
+    "TSLA:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          345.62,
+          348.95,
+          352.42,
+          364.2,
+          391.95
+        ]
+      },
+      "ts": 1776289880.2586434
+    },
+    "GOOGL:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          318.49,
+          317.24,
+          321.31,
+          332.91,
+          337.12
+        ]
+      },
+      "ts": 1776289880.9198332
+    },
+    "TSM:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          365.49,
+          370.6,
+          369.57,
+          379.89,
+          375.1
+        ]
+      },
+      "ts": 1776289881.5625427
+    },
+    "AAPL:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          260.49,
+          260.48,
+          259.2,
+          258.83,
+          266.43
+        ]
+      },
+      "ts": 1776289882.2606344
+    },
+    "META:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          628.39,
+          629.86,
+          634.53,
+          662.49,
+          671.58
+        ]
+      },
+      "ts": 1776289882.8980196
+    },
+    "AMD:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          236.64,
+          245.04,
+          246.83,
+          255.07,
+          258.12
+        ]
+      },
+      "ts": 1776289883.5776837
+    },
+    "NVDA:5d": {
+      "data": {
+        "dates": [
+          "04/09",
+          "04/10",
+          "04/13",
+          "04/14",
+          "04/15"
+        ],
+        "prices": [
+          183.91,
+          188.63,
+          189.31,
+          196.51,
+          198.87
+        ]
+      },
+      "ts": 1776289884.2682307
+    }
+  },
   "symbols": [
     "AVGO",
     "MSFT",
@@ -144,5 +335,5 @@
     "AMD",
     "NVDA"
   ],
-  "last_refresh": 1776245039.1393201
+  "last_refresh": 1776289878.1572206
 }
