@@ -1,5 +1,7 @@
 import os
+import time
 import logging
+import threading
 
 import requests as http_requests
 import yfinance as yf
@@ -13,6 +15,40 @@ log = logging.getLogger("stock-api")
 FINNHUB_KEY = os.environ.get("FINNHUB_API_KEY", "")
 TWELVE_KEY = os.environ.get("TWELVE_DATA_API_KEY", "")
 ALPHA_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
+
+# Cache TTL in seconds (default 2 minutes)
+QUOTE_CACHE_TTL = int(os.environ.get("QUOTE_CACHE_TTL", "120"))
+HISTORY_CACHE_TTL = int(os.environ.get("HISTORY_CACHE_TTL", "300"))
+
+
+# ── Server-side cache ────────────────────────────────────────
+
+class Cache:
+    def __init__(self):
+        self._store = {}
+        self._lock = threading.Lock()
+
+    def get(self, key, ttl):
+        with self._lock:
+            entry = self._store.get(key)
+            if entry and (time.time() - entry["ts"]) < ttl:
+                return entry["data"]
+        return None
+
+    def set(self, key, data):
+        with self._lock:
+            self._store[key] = {"data": data, "ts": time.time()}
+
+    def stats(self):
+        with self._lock:
+            now = time.time()
+            total = len(self._store)
+            fresh = sum(1 for e in self._store.values() if (now - e["ts"]) < QUOTE_CACHE_TTL)
+            return {"total_entries": total, "fresh_entries": fresh}
+
+
+quote_cache = Cache()
+history_cache = Cache()
 
 
 # ── Quote providers (fallback chain) ──────────────────────────
@@ -60,7 +96,6 @@ def quote_finnhub(symbol):
         return None
     prev_close = data.get("pc", 0)
 
-    # Finnhub profile for name/sector
     name, sector = symbol, ""
     try:
         p = http_requests.get(
@@ -126,7 +161,6 @@ def _build_quote(symbol, price, prev_close, name, sector, quote_type, source):
     }
 
 
-# Ordered fallback chain
 PROVIDERS = [
     ("yfinance", quote_yfinance),
     ("finnhub", quote_finnhub),
@@ -136,15 +170,23 @@ PROVIDERS = [
 
 
 def get_quote(symbol):
-    """Try each provider in order, return first success."""
+    """Try cache first, then each provider in order."""
+    cached = quote_cache.get(symbol, QUOTE_CACHE_TTL)
+    if cached:
+        cached["source"] = cached.get("source", "?") + " (cached)"
+        log.info(f"{symbol}: serving from cache")
+        return cached
+
     for name, fn in PROVIDERS:
         try:
             result = fn(symbol)
             if result and result.get("price"):
                 log.info(f"{symbol}: got quote from {name}")
+                quote_cache.set(symbol, result)
                 return result
         except Exception as e:
             log.warning(f"{symbol}: {name} failed — {e}")
+
     return {"error": f"所有報價來源皆失敗：{symbol}"}
 
 
@@ -178,11 +220,19 @@ def history():
     results = {}
 
     for symbol in symbols:
+        sym = symbol.upper()
+        cache_key = f"{sym}:{period}"
+
+        cached = history_cache.get(cache_key, HISTORY_CACHE_TTL)
+        if cached:
+            results[sym] = cached
+            continue
+
         try:
-            ticker = yf.Ticker(symbol.upper())
+            ticker = yf.Ticker(sym)
             hist = ticker.history(period=period, interval=interval)
             if hist.empty:
-                results[symbol.upper()] = {"error": "無歷史資料"}
+                results[sym] = {"error": "無歷史資料"}
                 continue
 
             dates = []
@@ -194,12 +244,14 @@ def history():
                 else:
                     dates.append(ts.strftime("%m/%d"))
 
-            results[symbol.upper()] = {
+            entry = {
                 "dates": dates,
                 "prices": [round(p, 2) for p in hist["Close"].tolist()],
             }
+            history_cache.set(cache_key, entry)
+            results[sym] = entry
         except Exception as e:
-            results[symbol.upper()] = {"error": str(e)}
+            results[sym] = {"error": str(e)}
 
     return jsonify(results)
 
@@ -212,6 +264,9 @@ def sources():
         "finnhub": bool(FINNHUB_KEY),
         "twelvedata": bool(TWELVE_KEY),
         "alphavantage": bool(ALPHA_KEY),
+        "cache": quote_cache.stats(),
+        "quote_cache_ttl": QUOTE_CACHE_TTL,
+        "history_cache_ttl": HISTORY_CACHE_TTL,
     })
 
 
