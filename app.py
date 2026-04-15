@@ -176,6 +176,18 @@ class PersistentCache:
         with self._lock:
             self._last_refresh = time.time()
 
+    def reload_from_github(self):
+        saved = load_cache_from_github()
+        if saved:
+            with self._lock:
+                self._quotes = saved.get("quotes", {})
+                self._history = saved.get("history", {})
+                self._symbols = set(saved.get("symbols", []))
+                self._last_refresh = saved.get("last_refresh", 0)
+            log.info(f"Reloaded from GitHub: {len(self._quotes)} quotes")
+            return True
+        return False
+
     def stats(self):
         with self._lock:
             return {
@@ -323,6 +335,16 @@ def get_quote(symbol):
     if cached:
         log.info(f"{symbol}: serving from cache")
         return cached
+
+    # Try reloading from GitHub if local cache is empty
+    if cache.stats()["cached_quotes"] == 0:
+        log.info("Local cache empty, trying to reload from GitHub...")
+        cache.reload_from_github()
+        cached = cache.get_quote(symbol)
+        if cached:
+            log.info(f"{symbol}: serving from GitHub cache after reload")
+            return cached
+
     return fetch_quote_fresh(symbol)
 
 
