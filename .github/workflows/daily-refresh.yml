@@ -4,30 +4,26 @@ on:
   schedule:
     # UTC 21:00 = US market close (4PM ET) + 1 hour buffer
     # = Taiwan time 05:00 AM next day
-    - cron: '0 21 * * 1-5'  # Mon-Fri only (no market on weekends)
+    - cron: '0 21 * * 1-5'  # Mon-Fri only
   workflow_dispatch:  # Allow manual trigger from GitHub Actions tab
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger daily refresh
-        run: |
-          echo "Triggering stock quote refresh..."
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            https://us-stock-dashboard.onrender.com/api/refresh \
-            -H "Content-Type: application/json" \
-            --max-time 120)
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | head -n -1)
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
-          echo "HTTP Status: $HTTP_CODE"
-          echo "Response: $BODY"
+      - name: Install dependencies
+        run: pip install yfinance requests
 
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::Refresh failed with HTTP $HTTP_CODE"
-            exit 1
-          fi
-
-          echo "$BODY" | python3 -m json.tool
+      - name: Fetch quotes and push cache
+        env:
+          GITHUB_TOKEN: ${{ secrets.CACHE_TOKEN }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+        run: python scripts/refresh_quotes.py
