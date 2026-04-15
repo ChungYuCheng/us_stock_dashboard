@@ -704,13 +704,22 @@ async function refresh() {
   const symbols = holdings.map(h => h.symbol);
 
   try {
-    const [quoteRes, hist5dRes] = await Promise.all([
-      fetch('/api/quote', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ symbols }) }),
-      fetch('/api/history', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ symbols, period: '5d' }) }),
-    ]);
-
+    // Fetch quotes (critical) and history (optional) separately
+    const quoteRes = await fetch('/api/quote', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ symbols }) });
     quotesCache = await quoteRes.json();
-    const hist5d = await hist5dRes.json();
+
+    // History is non-critical — don't let it block the dashboard
+    try {
+      const hist5dRes = await fetch('/api/history', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ symbols, period: '5d' }) });
+      const hist5d = await hist5dRes.json();
+      symbols.forEach(sym => {
+        if (!histCache[sym]) histCache[sym] = {};
+        histCache[sym]['5d'] = hist5d[sym];
+      });
+    } catch (e) {
+      console.warn('History fetch failed (non-critical):', e);
+      toast('走勢圖資料暫時無法取得', 'warn', 3000);
+    }
 
     const failedSymbols = [];
     const zeroPriceSymbols = [];
@@ -726,11 +735,6 @@ async function refresh() {
     const sources = new Set();
     symbols.forEach(sym => { const q = quotesCache[sym]; if (q && q.source) sources.add(q.source); });
     if (sources.size > 0) toast(`報價來源：${[...sources].join(', ')}`, 'info', 3000);
-
-    symbols.forEach(sym => {
-      if (!histCache[sym]) histCache[sym] = {};
-      histCache[sym]['5d'] = hist5d[sym];
-    });
 
     renderSummary();
     renderPieCharts();

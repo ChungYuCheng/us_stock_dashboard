@@ -179,8 +179,23 @@ def main():
     cache["symbols"] = symbols
     cache["last_refresh"] = time.time()
 
-    # Clear stale history cache
-    cache["history"] = {}
+    # Pre-fetch 5d history for all symbols
+    print(f"\nFetching 5-day history...")
+    history = {}
+    for sym in symbols:
+        try:
+            ticker = yf.Ticker(sym)
+            hist = ticker.history(period="5d", interval="1d")
+            if not hist.empty:
+                dates = [ts.strftime("%m/%d") for ts in hist.index]
+                prices = [round(p, 2) for p in hist["Close"].tolist()]
+                history[f"{sym}:5d"] = {"data": {"dates": dates, "prices": prices}, "ts": time.time()}
+                print(f"  {sym}: {len(prices)} points")
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"  {sym}: history failed — {e}")
+
+    cache["history"] = history
 
     print(f"\n{'='*40}")
     print(f"Success: {len(success)} | Failed: {len(failed)}")
