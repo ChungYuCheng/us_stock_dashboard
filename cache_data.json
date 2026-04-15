@@ -11,7 +11,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243535.107179
+      "ts": 1776245038.139202
     },
     "AAPL": {
       "data": {
@@ -24,7 +24,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243530.4968007
+      "ts": 1776245034.3858037
     },
     "TSLA": {
       "data": {
@@ -37,7 +37,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243525.4396014
+      "ts": 1776245030.547039
     },
     "MSFT": {
       "data": {
@@ -50,7 +50,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243522.3062644
+      "ts": 1776245027.8444955
     },
     "GOOGL": {
       "data": {
@@ -63,7 +63,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243527.1756082
+      "ts": 1776245031.788858
     },
     "AMZN": {
       "data": {
@@ -76,7 +76,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243523.8501503
+      "ts": 1776245029.0675106
     },
     "META": {
       "data": {
@@ -89,7 +89,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243531.944731
+      "ts": 1776245035.6513112
     },
     "TSM": {
       "data": {
@@ -102,7 +102,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243528.8010952
+      "ts": 1776245033.0574038
     },
     "AMD": {
       "data": {
@@ -115,7 +115,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243533.575916
+      "ts": 1776245036.876661
     },
     "AVGO": {
       "data": {
@@ -128,7 +128,7 @@
         "quoteType": "EQUITY",
         "source": "yfinance"
       },
-      "ts": 1776243520.54672
+      "ts": 1776245026.4656265
     }
   },
   "history": {},
@@ -144,5 +144,5 @@
     "AMD",
     "NVDA"
   ],
-  "last_refresh": 1776243536.1073134
+  "last_refresh": 1776245039.1393201
 }
