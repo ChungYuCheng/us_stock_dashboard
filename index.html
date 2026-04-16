@@ -361,8 +361,8 @@ function renderMarketSummary(market, prefix, stripId, sectionId) {
   document.getElementById(stripId).innerHTML = `
     <div class="summary-card"><div class="label">未實現損益 <button class="eye-toggle" onclick="togglePnl()">${eyeIcon}</button></div><div class="value pnl-data ${mask}"><span style="color:${pnlColor}">${pnl>=0?'+':''}${prefix}${fmt(Math.abs(pnl))}</span></div><div class="sub pnl-data ${mask}"><span style="color:${pnlColor}">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
     <div class="summary-card"><div class="label">損益 %</div><div class="value pnl-data ${mask}"><span style="color:${pnlColor};font-size:28px">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
-    <div class="summary-card"><div class="label">市值</div><div class="value">${prefix}${fmtInt(totalValue)}</div></div>
-    <div class="summary-card"><div class="label">投入成本</div><div class="value">${prefix}${fmtInt(totalCost)}</div></div>
+    <div class="summary-card"><div class="label">市值</div><div class="value pnl-data ${mask}">${prefix}${fmtInt(totalValue)}</div></div>
+    <div class="summary-card"><div class="label">投入成本</div><div class="value pnl-data ${mask}">${prefix}${fmtInt(totalCost)}</div></div>
     <div class="summary-card"><div class="label">今日漲跌</div><div class="value pnl-data ${mask}"><span style="color:${dayColor}">${totalDayChange>=0?'+':''}${prefix}${fmt(Math.abs(totalDayChange))}</span></div></div>
     <div class="summary-card"><div class="label">持股數</div><div class="value">${mh.length}</div></div>
   `;
@@ -620,8 +620,8 @@ function renderTable() {
       <td style="font-size:12px;color:var(--text-dim)">${sector}</td>
       <td>${p}${fmt(price)}</td>
       <td>${h.shares}</td>
-      <td>${p}${fmt(h.cost)}</td>
-      <td><strong>${p}${fmt(value)}</strong></td>
+      <td><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${p}${fmt(h.cost)}</span></td>
+      <td><strong><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${p}${fmt(value)}</span></strong></td>
       <td class="${cls(pnl)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${arrow(pnl)} ${p}${fmt(Math.abs(pnl))}</span></td>
       <td class="${cls(pnlPct)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${pnlPct>=0?'+':''}${fmt(pnlPct)}%</span></td>
       <td class="${cls(change)}">${change>=0?'+':''}${fmt(change)}%</td>
