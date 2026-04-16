@@ -183,6 +183,7 @@ def main():
     print(f"\nFetching history data...")
     history = {}
     periods = [
+        ("1d", "5m", "%H:%M"),
         ("5d", "1d", "%m/%d"),
         ("1mo", "1d", "%m/%d"),
     ]
