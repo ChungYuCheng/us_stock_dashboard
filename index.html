@@ -655,7 +655,7 @@ function renderMiniCharts() {
 
     card.innerHTML = `
       <div class="mini-header">
-        <h4>${displaySym(sym)} <span class="market-badge ${isTW(h)?'badge-tw':'badge-us'}" style="font-size:9px;padding:1px 5px">${h.market}</span></h4>
+        <h4>${displaySym(sym)} <span class="market-badge ${isTW(h)?'badge-tw':'badge-us'}" style="font-size:9px;padding:1px 5px">${h.market}</span> <span id="mchg_${sym}" style="font-size:12px;font-weight:600"></span></h4>
         <div class="mini-tabs">${tabsHtml}</div>
       </div>
       <canvas id="mc_${sym}"></canvas>
@@ -673,16 +673,37 @@ function drawMini(symbol, period, color, prefix) {
   const data = (histCache[symbol]||{})[period];
   if (!data || data.error) return;
 
+  // Calculate period change %
+  const prices = data.prices;
+  const first = prices[0];
+  const last = prices[prices.length - 1];
+  const chgPct = first ? ((last - first) / first * 100) : 0;
+  const chgColor = chgPct >= 0 ? 'var(--green)' : 'var(--red)';
+  const chgSign = chgPct >= 0 ? '+' : '';
+
+  // Update change badge in header
+  const chgEl = document.getElementById(`mchg_${symbol}`);
+  if (chgEl) {
+    chgEl.style.color = chgColor;
+    chgEl.textContent = `${chgSign}${chgPct.toFixed(2)}%`;
+  }
+
   chartInstances[key] = new Chart(canvas, {
     type: 'line',
     data: {
       labels: data.dates,
-      datasets: [{ data: data.prices, borderColor: color, backgroundColor: color + '18', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 1.5 }]
+      datasets: [{ data: prices, borderColor: color, backgroundColor: color + '18', fill: true, tension: 0.35, pointRadius: 0, borderWidth: 1.5 }]
     },
     options: {
       responsive: true, maintainAspectRatio: true, aspectRatio: 1.8,
       interaction: { intersect: false, mode: 'index' },
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => prefix+fmt(c.parsed.y) } } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: c => {
+          const p = c.parsed.y;
+          const chg = first ? ((p - first) / first * 100) : 0;
+          return `${prefix}${fmt(p)}  (${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%)`;
+        }
+      } } },
       scales: {
         x: { ticks: { color: '#9ca3af', maxTicksLimit: 5, font: { size: 9 } }, grid: { display: false } },
         y: { ticks: { color: '#9ca3af', font: { size: 9 }, callback: v=>prefix+v, maxTicksLimit: 4 }, grid: { color: '#e5e7eb44' } }
