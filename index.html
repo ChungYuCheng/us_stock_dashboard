@@ -128,6 +128,15 @@
 
   .last-update { font-size: 11px; color: rgba(255,255,255,.5); margin-top: 4px; }
 
+  .eye-toggle {
+    background: none; border: none; cursor: pointer;
+    font-size: 16px; color: var(--text-dim); padding: 2px 4px;
+    border-radius: 4px; transition: color .15s;
+    vertical-align: middle; margin-left: 4px;
+  }
+  .eye-toggle:hover { color: var(--accent); }
+  .pnl-mask { filter: blur(8px); user-select: none; pointer-events: none; transition: filter .2s; }
+
   @media (max-width: 1100px) {
     .summary-strip { grid-template-columns: repeat(3, 1fr); }
     .pie-row { grid-template-columns: 1fr 1fr; }
@@ -190,7 +199,7 @@
       </div>
       <div class="panel bar-panel">
         <div class="panel-title">美股未實現損益</div>
-        <canvas id="pnlBarUS"></canvas>
+        <div class="pnl-data" id="pnlBarWrapUS"><canvas id="pnlBarUS"></canvas></div>
       </div>
     </div>
     <div class="row" id="chartRowTW" style="display:none">
@@ -201,7 +210,7 @@
       </div>
       <div class="panel bar-panel">
         <div class="panel-title">台股未實現損益</div>
-        <canvas id="pnlBarTW"></canvas>
+        <div class="pnl-data" id="pnlBarWrapTW"><canvas id="pnlBarTW"></canvas></div>
       </div>
     </div>
   </div>
@@ -248,6 +257,21 @@ let chartInstances = {};
 let histCache = {};
 let miniActiveTab = {};
 let portfolioPeriod = { US: '1mo', TW: '1mo' };
+let pnlVisible = false;
+
+function togglePnl() {
+  pnlVisible = !pnlVisible;
+  applyPnlMask();
+}
+
+function applyPnlMask() {
+  document.querySelectorAll('.eye-toggle').forEach(btn => {
+    btn.textContent = pnlVisible ? '👁' : '👁‍🗨';
+  });
+  document.querySelectorAll('.pnl-data').forEach(el => {
+    el.classList.toggle('pnl-mask', !pnlVisible);
+  });
+}
 
 function saveHoldings() { localStorage.setItem('holdings', JSON.stringify(holdings)); }
 function fmt(n) { return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
@@ -331,12 +355,15 @@ function renderMarketSummary(market, prefix, stripId, sectionId) {
   const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)';
   const dayColor = totalDayChange >= 0 ? 'var(--green)' : 'var(--red)';
 
+  const mask = pnlVisible ? '' : 'pnl-mask';
+  const eyeIcon = pnlVisible ? '👁' : '👁‍🗨';
+
   document.getElementById(stripId).innerHTML = `
-    <div class="summary-card"><div class="label">未實現損益</div><div class="value"><span style="color:${pnlColor}">${pnl>=0?'+':''}${prefix}${fmt(Math.abs(pnl))}</span></div><div class="sub"><span style="color:${pnlColor}">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
-    <div class="summary-card"><div class="label">損益 %</div><div class="value"><span style="color:${pnlColor};font-size:28px">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
+    <div class="summary-card"><div class="label">未實現損益 <button class="eye-toggle" onclick="togglePnl()">${eyeIcon}</button></div><div class="value pnl-data ${mask}"><span style="color:${pnlColor}">${pnl>=0?'+':''}${prefix}${fmt(Math.abs(pnl))}</span></div><div class="sub pnl-data ${mask}"><span style="color:${pnlColor}">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
+    <div class="summary-card"><div class="label">損益 %</div><div class="value pnl-data ${mask}"><span style="color:${pnlColor};font-size:28px">${pnl>=0?'+':''}${fmt(pnlPct)}%</span></div></div>
     <div class="summary-card"><div class="label">市值</div><div class="value">${prefix}${fmtInt(totalValue)}</div></div>
     <div class="summary-card"><div class="label">投入成本</div><div class="value">${prefix}${fmtInt(totalCost)}</div></div>
-    <div class="summary-card"><div class="label">今日漲跌</div><div class="value"><span style="color:${dayColor}">${totalDayChange>=0?'+':''}${prefix}${fmt(Math.abs(totalDayChange))}</span></div></div>
+    <div class="summary-card"><div class="label">今日漲跌</div><div class="value pnl-data ${mask}"><span style="color:${dayColor}">${totalDayChange>=0?'+':''}${prefix}${fmt(Math.abs(totalDayChange))}</span></div></div>
     <div class="summary-card"><div class="label">持股數</div><div class="value">${mh.length}</div></div>
   `;
 }
@@ -358,10 +385,11 @@ function renderMarketPies(market, prefix, rowId, label) {
   const secId = `pieSec_${market}`;
   const pnlId = `piePnl_${market}`;
 
+  const pnlMask = pnlVisible ? '' : 'pnl-mask';
   row.innerHTML = `
     <div class="panel pie-panel"><div class="panel-title">${label}配置</div><canvas id="${allocId}"></canvas></div>
     <div class="panel pie-panel"><div class="panel-title">產業分布</div><canvas id="${secId}"></canvas></div>
-    <div class="panel pie-panel"><div class="panel-title">${label}損益</div><canvas id="${pnlId}"></canvas></div>
+    <div class="panel pie-panel"><div class="panel-title">${label}損益</div><div class="pnl-data ${pnlMask}"><canvas id="${pnlId}"></canvas></div></div>
   `;
 
   // Allocation
@@ -594,8 +622,8 @@ function renderTable() {
       <td>${h.shares}</td>
       <td>${p}${fmt(h.cost)}</td>
       <td><strong>${p}${fmt(value)}</strong></td>
-      <td class="${cls(pnl)}">${arrow(pnl)} ${p}${fmt(Math.abs(pnl))}</td>
-      <td class="${cls(pnlPct)}">${pnlPct>=0?'+':''}${fmt(pnlPct)}%</td>
+      <td class="${cls(pnl)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${arrow(pnl)} ${p}${fmt(Math.abs(pnl))}</span></td>
+      <td class="${cls(pnlPct)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${pnlPct>=0?'+':''}${fmt(pnlPct)}%</span></td>
       <td class="${cls(change)}">${change>=0?'+':''}${fmt(change)}%</td>
       <td><button class="remove-btn" onclick="removeHolding('${h.symbol}')">移除</button></td>
     </tr>`;
@@ -742,6 +770,7 @@ async function refresh() {
     renderTable();
     renderMiniCharts();
     await renderPortfolioChart();
+    applyPnlMask();
 
     if (failedSymbols.length === 0 && zeroPriceSymbols.length === 0) {
       const isCached = [...sources].every(s => s.includes('cached'));
