@@ -2,9 +2,9 @@ name: Daily Stock Refresh
 
 on:
   schedule:
-    - cron: '0 6 * * 1-5'   # UTC 06:00 = TW market close (13:30 TST) + buffer
-    - cron: '0 21 * * 1-5'  # UTC 21:00 = US market close (16:00 ET) + buffer
-  workflow_dispatch:  # Allow manual trigger from GitHub Actions tab
+    - cron: '0 6 * * 1-5'   # UTC 06:00 = TW market close + buffer
+    - cron: '0 21 * * 1-5'  # UTC 21:00 = US market close + buffer
+  workflow_dispatch:  # Manual trigger from GitHub Actions tab
 
 jobs:
   refresh:
@@ -26,3 +26,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.CACHE_TOKEN }}
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
         run: python scripts/refresh_quotes.py
+
+      - name: Notify Render to reload cache
+        if: success()
+        run: |
+          echo "Notifying Render to reload cache..."
+          curl -s -X POST https://us-stock-dashboard.onrender.com/api/reload-cache \
+            --max-time 60 || echo "Render notification failed (may be sleeping)"

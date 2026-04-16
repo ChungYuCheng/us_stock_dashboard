@@ -729,7 +729,7 @@ async function refresh() {
       else if (!q.price || q.price === 0) zeroPriceSymbols.push(displaySym(sym));
     });
 
-    if (failedSymbols.length > 0) toast(`報價取得失敗：${failedSymbols.join(', ')}`, 'error');
+    if (failedSymbols.length > 0) toast(`${failedSymbols.join(', ')} 尚無快取，已加入追蹤，下次更新後會顯示`, 'warn', 5000);
     if (zeroPriceSymbols.length > 0) toast(`無法取得即時價格：${zeroPriceSymbols.join(', ')}`, 'warn', 5000);
 
     const sources = new Set();
