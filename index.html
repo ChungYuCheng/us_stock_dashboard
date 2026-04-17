@@ -100,8 +100,13 @@
   .htable tr:last-child td { border-bottom: none; }
   .up { color: var(--green); font-weight: 600; }
   .down { color: var(--red); font-weight: 600; }
-  .remove-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .remove-btn, .edit-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
   .remove-btn:hover { color: var(--red); border-color: var(--red); }
+  .edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+  .action-btns { display: flex; gap: 4px; }
+  .edit-input { width: 70px; padding: 2px 6px; border: 1px solid var(--accent); border-radius: 4px; font-size: 12px; text-align: right; outline: none; }
+  .save-btn { background: var(--green); border: none; color: #fff; cursor: pointer; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+  .cancel-btn { background: none; border: 1px solid var(--border); color: var(--text-dim); cursor: pointer; font-size: 12px; padding: 2px 8px; border-radius: 4px; }
 
   .mini-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .mini-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
@@ -324,6 +329,33 @@ function addHolding() {
 function removeHolding(symbol) {
   holdings = holdings.filter(h => h.symbol !== symbol);
   delete histCache[symbol];
+  saveHoldings();
+  refresh();
+}
+
+let editingSymbol = null;
+
+function editHolding(symbol) {
+  editingSymbol = symbol;
+  renderTable();
+}
+
+function cancelEdit() {
+  editingSymbol = null;
+  renderTable();
+}
+
+function saveEdit(symbol) {
+  const sharesEl = document.getElementById(`edit_shares_${symbol}`);
+  const costEl = document.getElementById(`edit_cost_${symbol}`);
+  const shares = parseFloat(sharesEl.value);
+  const cost = parseFloat(costEl.value);
+  if (!shares || shares <= 0) return toast('請輸入有效的持股數量', 'warn');
+  if (!cost || cost <= 0) return toast('請輸入有效的成本價', 'warn');
+
+  const h = holdings.find(x => x.symbol === symbol);
+  if (h) { h.shares = shares; h.cost = cost; }
+  editingSymbol = null;
   saveHoldings();
   refresh();
 }
@@ -613,19 +645,30 @@ function renderTable() {
     const badgeClass = isTW(h) ? 'badge-tw' : 'badge-us';
     const badgeLabel = isTW(h) ? 'TW' : 'US';
 
+    const isEditing = editingSymbol === h.symbol;
+    const sharesCell = isEditing
+      ? `<input class="edit-input" id="edit_shares_${h.symbol}" type="number" value="${h.shares}" min="0" step="any">`
+      : `${h.shares}`;
+    const costCell = isEditing
+      ? `<input class="edit-input" id="edit_cost_${h.symbol}" type="number" value="${h.cost}" min="0" step="any">`
+      : `<span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${p}${fmt(h.cost)}</span>`;
+    const actionCell = isEditing
+      ? `<div class="action-btns"><button class="save-btn" onclick="saveEdit('${h.symbol}')">儲存</button><button class="cancel-btn" onclick="cancelEdit()">取消</button></div>`
+      : `<div class="action-btns"><button class="edit-btn" onclick="editHolding('${h.symbol}')">編輯</button><button class="remove-btn" onclick="removeHolding('${h.symbol}')">移除</button></div>`;
+
     html += `<tr>
       <td><span class="market-badge ${badgeClass}">${badgeLabel}</span></td>
       <td><strong>${displaySym(h.symbol)}</strong></td>
       <td>${q.name || displaySym(h.symbol)}</td>
       <td style="font-size:12px;color:var(--text-dim)">${sector}</td>
       <td>${p}${fmt(price)}</td>
-      <td>${h.shares}</td>
-      <td><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${p}${fmt(h.cost)}</span></td>
+      <td>${sharesCell}</td>
+      <td>${costCell}</td>
       <td><strong><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${p}${fmt(value)}</span></strong></td>
       <td class="${cls(pnl)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${arrow(pnl)} ${p}${fmt(Math.abs(pnl))}</span></td>
       <td class="${cls(pnlPct)}"><span class="pnl-data ${pnlVisible?'':'pnl-mask'}">${pnlPct>=0?'+':''}${fmt(pnlPct)}%</span></td>
       <td class="${cls(change)}">${change>=0?'+':''}${fmt(change)}%</td>
-      <td><button class="remove-btn" onclick="removeHolding('${h.symbol}')">移除</button></td>
+      <td>${actionCell}</td>
     </tr>`;
   });
 
