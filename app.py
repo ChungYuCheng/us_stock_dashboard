@@ -239,27 +239,6 @@ def reload_cache():
     return jsonify({"reloaded": ok, "cache": cache.stats()})
 
 
-@app.route("/api/debug-github")
-def debug_github():
-    """Debug endpoint to check GitHub API connectivity."""
-    token_preview = GITHUB_TOKEN[:8] + "..." if GITHUB_TOKEN else "(empty)"
-    result = {"token_set": bool(GITHUB_TOKEN), "token_preview": token_preview, "repo": GITHUB_REPO}
-    try:
-        url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{GITHUB_CACHE_PATH}"
-        resp = http_requests.get(url, headers=github_headers(), timeout=10)
-        result["status_code"] = resp.status_code
-        if resp.status_code == 200:
-            result["file_size"] = resp.json().get("size", 0)
-            result["ok"] = True
-        else:
-            result["error"] = resp.text[:300]
-            result["ok"] = False
-    except Exception as e:
-        result["error"] = str(e)
-        result["ok"] = False
-    return jsonify(result)
-
-
 @app.route("/api/sources")
 def sources():
     return jsonify({
