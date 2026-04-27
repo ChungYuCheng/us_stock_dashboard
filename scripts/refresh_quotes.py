@@ -211,8 +211,10 @@ def main():
     print("\nSaving cache to GitHub...")
     ok = save_cache_to_github(cache, sha)
 
-    if not ok or failed:
+    if not ok:
         sys.exit(1)
+    if failed:
+        print(f"WARNING: {len(failed)} symbol(s) failed, but cache saved successfully")
 
 
 if __name__ == "__main__":
